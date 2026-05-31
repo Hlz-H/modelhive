@@ -1,5 +1,6 @@
 {
   "name": "modelhive",
+  "account_id": "f06c988715ed9691d5161e281df258be",
   "compatibility_date": "2025-04-01",
   "compatibility_flags": [
     "nodejs_compat"
@@ -22,7 +23,7 @@
     {
       "binding": "DB",
       "database_name": "modelhive-db",
-      "database_id": "local-dev",
+      "database_id": "f2debf97-c6f6-4e0a-a3db-4aeafe5924ca",
       "migrations_dir": "src/server/db/migrations"
     }
   ]
