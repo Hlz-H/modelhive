@@ -1,0 +1,51 @@
+import { sql } from "drizzle-orm";
+import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { user } from "../auth/auth.table";
+
+// Categories table for organizing models
+export const categories = sqliteTable("categories", {
+	id: text("id").primaryKey(),
+	name: text("name").notNull().unique(),
+	slug: text("slug").notNull().unique(),
+	description: text("description"),
+	createdAt: text("created_at")
+		.notNull()
+		.default(sql`(CURRENT_TIMESTAMP)`),
+});
+
+// Models table - generic model entity
+export const models = sqliteTable("models", {
+	id: text("id").primaryKey(),
+	name: text("name").notNull(),
+	slug: text("slug").notNull().unique(),
+	description: text("description"),
+	// Model type: ai-model, 3d-model, design, other
+	type: text("type").notNull().default("other"),
+	// Cover image URL
+	imageUrl: text("image_url"),
+	// Model file URL
+	fileUrl: text("file_url"),
+	// External reference link
+	externalUrl: text("external_url"),
+	// Version string
+	version: text("version").default("1.0.0"),
+	// Owner reference
+	userId: text("user_id")
+		.notNull()
+		.references(() => user.id),
+	// Category reference
+	categoryId: text("category_id").references(() => categories.id),
+	// Published status
+	isPublished: integer("is_published", { mode: "boolean" })
+		.notNull()
+		.default(true),
+	// View counter
+	viewCount: integer("view_count").notNull().default(0),
+	// Timestamps
+	createdAt: text("created_at")
+		.notNull()
+		.default(sql`(CURRENT_TIMESTAMP)`),
+	updatedAt: text("updated_at")
+		.notNull()
+		.default(sql`(CURRENT_TIMESTAMP)`),
+});

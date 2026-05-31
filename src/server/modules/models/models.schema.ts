@@ -1,0 +1,79 @@
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { z } from "zod/v4";
+import { categories, models } from "./models.table";
+
+// ===== Categories =====
+
+export const categoryIdSchema = z.string().min(1).meta({ example: "cat_001" }).describe("Category ID");
+export const categoryNameSchema = z.string().min(1).max(100).meta({ example: "AI Models" }).describe("Category name");
+export const categorySlugSchema = z.string().min(1).max(100).meta({ example: "ai-models" }).describe("Category slug");
+
+export const selectCategorySchema = createSelectSchema(categories, {
+	id: categoryIdSchema,
+	name: categoryNameSchema,
+	slug: categorySlugSchema,
+});
+
+export const insertCategorySchema = createInsertSchema(categories, {
+	name: categoryNameSchema,
+	slug: categorySlugSchema,
+}).omit({
+	id: true,
+	createdAt: true,
+});
+
+export const updateCategorySchema = insertCategorySchema.partial();
+
+export const categoryResponseSchema = z.object({
+	category: selectCategorySchema,
+});
+
+export const categoryListResponseSchema = z.object({
+	categories: z.array(selectCategorySchema),
+});
+
+// ===== Models =====
+
+export const modelIdSchema = z.string().min(1).meta({ example: "mdl_001" }).describe("Model ID");
+export const modelNameSchema = z.string().min(1).max(200).meta({ example: "GPT-4o" }).describe("Model name");
+export const modelSlugSchema = z.string().min(1).max(200).meta({ example: "gpt-4o" }).describe("Model slug");
+export const modelTypeSchema = z.enum(["ai-model", "3d-model", "design", "other"]).describe("Model type");
+
+export const selectModelSchema = createSelectSchema(models, {
+	id: modelIdSchema,
+	name: modelNameSchema,
+	slug: modelSlugSchema,
+	type: modelTypeSchema,
+});
+
+export const insertModelSchema = createInsertSchema(models, {
+	name: modelNameSchema,
+	slug: modelSlugSchema,
+	type: modelTypeSchema,
+}).omit({
+	id: true,
+	userId: true,
+	createdAt: true,
+	updatedAt: true,
+	viewCount: true,
+});
+
+export const updateModelSchema = insertModelSchema.partial();
+
+// Response schemas
+export const modelResponseSchema = z.object({
+	model: selectModelSchema,
+});
+
+export const modelListResponseSchema = z.object({
+	models: z.array(selectModelSchema),
+	total: z.number().int().optional(),
+});
+
+// Type exports
+export type SelectCategory = z.infer<typeof selectCategorySchema>;
+export type InsertCategory = z.infer<typeof insertCategorySchema>;
+export type UpdateCategory = z.infer<typeof updateCategorySchema>;
+export type SelectModel = z.infer<typeof selectModelSchema>;
+export type InsertModel = z.infer<typeof insertModelSchema>;
+export type UpdateModel = z.infer<typeof updateModelSchema>;

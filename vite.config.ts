@@ -59,6 +59,15 @@ export default defineConfig(({ mode }) => {
 				persistState: true,
 			}),
 		],
+		optimizeDeps: {
+			include: [],
+			exclude: [
+				"better-auth",
+				"hono/jsx",
+				"hono/jsx/jsx-dev-runtime",
+				"hono/jsx/jsx-runtime",
+			],
+		},
 		resolve: {
 			alias: {
 				"@": path.resolve(__dirname, "./src"),

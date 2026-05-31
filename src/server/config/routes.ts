@@ -20,4 +20,8 @@ export const PUBLIC_API_ROUTES = [
 	"/api/docs", // API 文档界面
 	"/api/docs/*", // API 文档相关资源
 	"/api/health", // 健康检查端点
+	// ModelHive public endpoints
+	"/api/models", // 模型列表（公开）
+	"/api/models/*", // 模型详情等（公开）
+	"/api/categories", // 分类列表（公开）
 ] as const;
