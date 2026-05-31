@@ -14,7 +14,8 @@ interface HeaderProps {
 export function Header({ navItems = [], children }: HeaderProps) {
 	const defaultNavItems: NavItem[] = [
 		{ path: "/", label: "Home" },
-		{ path: "/routes", label: "API" },
+		{ path: "/login", label: "Login" },
+		{ path: "/register", label: "Register" },
 	];
 
 	const items = navItems.length > 0 ? navItems : defaultNavItems;
@@ -24,7 +25,7 @@ export function Header({ navItems = [], children }: HeaderProps) {
 			<div className={cn(layout.container, "px-4 md:px-8")}>
 				<nav className="flex items-center justify-between">
 					<Link to="/" className={cn(text.h2, interactive.base)}>
-						Vinoflare
+						ModelHive
 					</Link>
 
 					<div className="flex items-center gap-8">

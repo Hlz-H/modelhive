@@ -57,12 +57,14 @@ export default defineConfig(({ mode }) => {
 			cloudflare({
 				configPath: "./wrangler.jsonc",
 				persistState: true,
+				tunnel: false,
 			}),
 		],
 		optimizeDeps: {
 			include: [],
 			exclude: [
 				"better-auth",
+				"hono",
 				"hono/jsx",
 				"hono/jsx/jsx-dev-runtime",
 				"hono/jsx/jsx-runtime",

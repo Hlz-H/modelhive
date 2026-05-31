@@ -1,6 +1,7 @@
 import { StatusCodes } from "http-status-codes";
 import { APIBuilder } from "@/server/core/api-builder";
 import { database } from "@/server/middleware/database";
+import { optionalAuth } from "@/server/middleware/auth-guard";
 import {
 	getAllCategories,
 	getModels,
@@ -23,7 +24,7 @@ import {
 
 export const createModelsModule = () => {
 	const builder = new APIBuilder({
-		middleware: [database()],
+		middleware: [optionalAuth, database()],
 	});
 
 	// ===== Categories =====

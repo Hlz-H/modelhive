@@ -18,16 +18,20 @@ export async function createAuth(c: CloudflareBindings, baseURL: string) {
 		baseURL,
 		secret: c.BETTER_AUTH_SECRET,
 
-		// 禁用邮箱密码登录，只使用 Discord OAuth
+		// 启用邮箱密码登录
 		emailAndPassword: {
-			enabled: false,
+			enabled: true,
 		},
 
 		// 社交登录配置
 		socialProviders: {
-			discord: {
-				clientId: c.DISCORD_CLIENT_ID,
-				clientSecret: c.DISCORD_CLIENT_SECRET,
+			github: {
+				clientId: c.GITHUB_CLIENT_ID,
+				clientSecret: c.GITHUB_CLIENT_SECRET,
+			},
+			google: {
+				clientId: c.GOOGLE_CLIENT_ID,
+				clientSecret: c.GOOGLE_CLIENT_SECRET,
 			},
 		},
 

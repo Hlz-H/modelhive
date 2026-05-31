@@ -1,5 +1,3 @@
-/** @jsxImportSource hono/jsx */
-
 import { Hono } from "hono";
 
 // Lazy load dependencies to avoid "matcher already built" error

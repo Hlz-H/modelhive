@@ -18,6 +18,55 @@ function isPublicRoute(path: string): boolean {
 }
 
 /**
+ * Optional authentication middleware
+ * Tries to authenticate the user but doesn't block unauthenticated requests.
+ * Sets c.get("user") and c.get("session") if authenticated, leaves them null otherwise.
+ */
+export const optionalAuth = createMiddleware<BaseContext>(async (c, next) => {
+	const path = c.req.path;
+
+	// In test environment, automatically authenticate with test user
+	if (c.env?.ENVIRONMENT === "test") {
+		c.set("user", {
+			id: "test-user-id",
+			name: "Test User",
+			email: "test@example.com",
+			emailVerified: false,
+			image: null,
+			createdAt: new Date(),
+			updatedAt: new Date(),
+		});
+		c.set("session", {
+			id: "test-session-id",
+			userId: "test-user-id",
+			expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+			token: "test-session-token",
+			createdAt: new Date(),
+			updatedAt: new Date(),
+			userAgent: "test-agent",
+			ipAddress: "127.0.0.1",
+		});
+		return next();
+	}
+
+	try {
+		const auth = await createAuth(c.env, c.req.raw.url);
+		const session = await auth.api.getSession({
+			headers: c.req.raw.headers,
+		});
+
+		if (session) {
+			c.set("user", session.user);
+			c.set("session", session.session);
+		}
+	} catch {
+		// Silently ignore auth errors - this is optional auth
+	}
+
+	return next();
+});
+
+/**
  * Authentication guard middleware
  * Automatically protects all routes except those defined in PUBLIC_API_ROUTES
  */

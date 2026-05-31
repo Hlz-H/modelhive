@@ -3,8 +3,15 @@ import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { user } from "../auth/auth.table";
 
 // Categories table for organizing models
+// Generate a random UUID v4 string
+function generateId(): string {
+	return crypto.randomUUID();
+}
+
 export const categories = sqliteTable("categories", {
-	id: text("id").primaryKey(),
+	id: text("id")
+		.primaryKey()
+		.$defaultFn(() => generateId()),
 	name: text("name").notNull().unique(),
 	slug: text("slug").notNull().unique(),
 	description: text("description"),
@@ -15,7 +22,9 @@ export const categories = sqliteTable("categories", {
 
 // Models table - generic model entity
 export const models = sqliteTable("models", {
-	id: text("id").primaryKey(),
+	id: text("id")
+		.primaryKey()
+		.$defaultFn(() => generateId()),
 	name: text("name").notNull(),
 	slug: text("slug").notNull().unique(),
 	description: text("description"),
