@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { signUp } from "@client/lib/auth";
 import { cn, colors, focus, interactive, text } from "@/client/lib/design";
 
 export const Route = createFileRoute("/register")({
@@ -21,17 +22,16 @@ function RegisterPage() {
 		setError("");
 
 		try {
-			const response = await fetch("/api/auth/sign-up/email", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ name, email, password }),
+			const result = await signUp.email({
+				name,
+				email,
+				password,
 			});
 
-			if (response.ok) {
-				navigate({ to: "/" });
+			if (result.error) {
+				setError(result.error.message || "Registration failed");
 			} else {
-				const data = await response.json();
-				setError(data.error?.message || "Registration failed");
+				navigate({ to: "/" });
 			}
 		} catch (err) {
 			setError("Network error");

@@ -23,8 +23,6 @@ function isPublicRoute(path: string): boolean {
  * Sets c.get("user") and c.get("session") if authenticated, leaves them null otherwise.
  */
 export const optionalAuth = createMiddleware<BaseContext>(async (c, next) => {
-	const path = c.req.path;
-
 	// In test environment, automatically authenticate with test user
 	if (c.env?.ENVIRONMENT === "test") {
 		c.set("user", {
@@ -71,10 +69,8 @@ export const optionalAuth = createMiddleware<BaseContext>(async (c, next) => {
  * Automatically protects all routes except those defined in PUBLIC_API_ROUTES
  */
 export const authGuard = createMiddleware<BaseContext>(async (c, next) => {
-	const path = c.req.path;
-
 	// Skip authentication for public routes
-	if (isPublicRoute(path)) {
+	if (isPublicRoute(c.req.path)) {
 		return next();
 	}
 

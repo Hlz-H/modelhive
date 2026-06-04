@@ -8,8 +8,8 @@ export function useTodoOperations() {
 	const [error, setError] = useState<string | null>(null);
 	const [operations, setOperations] = useState({
 		creating: false,
-		updating: new Set<number>(),
-		deleting: new Set<number>(),
+		updating: new Set<string>(),
+		deleting: new Set<string>(),
 	});
 
 	const createTodo = async (title: string) => {
@@ -69,7 +69,7 @@ export function useTodoOperations() {
 		}
 	};
 
-	const deleteTodo = async (id: number) => {
+	const deleteTodo = async (id: string) => {
 		setOperations((prev) => ({
 			...prev,
 			deleting: new Set([...prev.deleting, id]),

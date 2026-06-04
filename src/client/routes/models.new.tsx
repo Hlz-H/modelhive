@@ -1,14 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
 import { cn, colors, focus, interactive, layout, spacing, text } from "@/client/lib/design";
 
-export const Route = createFileRoute("/dashboard/models/new")({
+export const Route = createFileRoute("/models/new")({
 	component: CreateModelPage,
 });
 
 function CreateModelPage() {
-	const navigate = useNavigate();
 	const [name, setName] = useState("");
 	const [slug, setSlug] = useState("");
 	const [description, setDescription] = useState("");
@@ -22,6 +20,8 @@ function CreateModelPage() {
 		e.preventDefault();
 		setLoading(true);
 		setError("");
+
+		console.log("Creating model...", { name, slug, type });
 
 		try {
 			const response = await fetch("/api/models", {
@@ -37,15 +37,27 @@ function CreateModelPage() {
 				}),
 			});
 
+			console.log("Response status:", response.status);
+			console.log("Response headers:", Object.fromEntries(response.headers.entries()));
+
+			const responseText = await response.text();
+			console.log("Response body:", responseText);
+
 			if (response.ok) {
-				const data = await response.json();
-				navigate({ to: `/models/${data.model.slug}` });
+				const data = JSON.parse(responseText);
+				console.log("Success! Redirecting to:", `/models/${data.model.slug}`);
+				window.location.href = `/models/${data.model.slug}`;
 			} else {
-				const data = await response.json();
-				setError(data.error?.message || "Failed to create model");
+				try {
+					const data = JSON.parse(responseText);
+					setError(data.error?.message || `Error ${response.status}`);
+				} catch {
+					setError(`Error ${response.status}: ${responseText.substring(0, 100)}`);
+				}
 			}
 		} catch (err) {
-			setError("Network error");
+			console.error("Fetch error:", err);
+			setError(`Network error: ${err}`);
 		} finally {
 			setLoading(false);
 		}
@@ -67,7 +79,7 @@ function CreateModelPage() {
 					</div>
 				)}
 
-				<form onSubmit={handleCreate} className="max-w-2xl space-y-6">
+				<form onSubmit={handleCreate} action="javascript:void(0)" className="max-w-2xl space-y-6">
 					<div>
 						<label
 							htmlFor="name"

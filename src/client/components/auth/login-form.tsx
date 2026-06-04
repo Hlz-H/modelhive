@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { signIn } from "@client/lib/auth";
 import { cn, colors, focus, interactive, text } from "@/client/lib/design";
 
 export function LoginForm() {
@@ -15,17 +16,15 @@ export function LoginForm() {
 		setError("");
 
 		try {
-			const response = await fetch("/api/auth/sign-in/email", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ email, password }),
+			const result = await signIn.email({
+				email,
+				password,
 			});
 
-			if (response.ok) {
-				navigate({ to: "/" });
+			if (result.error) {
+				setError(result.error.message || "Login failed");
 			} else {
-				const data = await response.json();
-				setError(data.error?.message || "Login failed");
+				navigate({ to: "/" });
 			}
 		} catch (err) {
 			setError("Network error");
@@ -36,9 +35,7 @@ export function LoginForm() {
 
 	const handleOAuthLogin = async (provider: string) => {
 		try {
-			await fetch(`/api/auth/sign-in/${provider}`, {
-				method: "GET",
-			});
+			await signIn.social({ provider: provider as "github" | "google" });
 		} catch (err) {
 			setError("OAuth login failed");
 		}

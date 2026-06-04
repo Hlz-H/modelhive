@@ -5,9 +5,9 @@ import { TodoItem } from "./todo-item";
 interface TodoListProps {
 	todos: GetTodo200TodosItem[];
 	onToggle: (todo: GetTodo200TodosItem) => void;
-	onDelete: (id: number) => void;
-	updatingIds: Set<number>;
-	deletingIds: Set<number>;
+	onDelete: (id: string) => void;
+	updatingIds: Set<string>;
+	deletingIds: Set<string>;
 }
 
 export function TodoList({

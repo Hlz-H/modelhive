@@ -79,6 +79,19 @@ export function UserMenu() {
 
 					<div className="border-gray-100 border-t pt-2">
 						<Link
+							to="/dashboard"
+							className={cn(
+								"block px-4 py-2",
+								text.base,
+								colors.text.secondary,
+								interactive.base,
+								"hover:bg-gray-50",
+							)}
+							onClick={() => setShowDropdown(false)}
+						>
+							Dashboard
+						</Link>
+						<Link
 							to="/profile"
 							className={cn(
 								"block px-4 py-2",

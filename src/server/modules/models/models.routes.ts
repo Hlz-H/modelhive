@@ -4,6 +4,8 @@ import { database } from "@/server/middleware/database";
 import { optionalAuth } from "@/server/middleware/auth-guard";
 import {
 	getAllCategories,
+	createCategory,
+	seedCategories,
 	getModels,
 	getModelBySlug,
 	createModel,
@@ -15,11 +17,9 @@ import {
 	modelIdSchema,
 	modelListResponseSchema,
 	modelResponseSchema,
-	modelSlugSchema,
 	updateModelSchema,
 	categoryListResponseSchema,
 	insertCategorySchema,
-	selectCategorySchema,
 } from "./models.schema";
 
 export const createModelsModule = () => {
@@ -38,6 +38,30 @@ export const createModelsModule = () => {
 		.response(StatusCodes.OK, {
 			description: "Categories retrieved successfully",
 			schema: categoryListResponseSchema,
+		});
+
+	// Create category (admin)
+	builder
+		.post("/categories", createCategory)
+		.summary("Create category")
+		.description("Creates a new model category (admin only)")
+		.tags("Categories")
+		.body(insertCategorySchema)
+		.response(StatusCodes.CREATED, {
+			description: "Category created successfully",
+		})
+		.response(StatusCodes.FORBIDDEN, {
+			description: "Admin access required",
+		});
+
+	// Seed default categories
+	builder
+		.post("/categories/seed", seedCategories)
+		.summary("Seed default categories")
+		.description("Creates default model categories if they don't exist")
+		.tags("Categories")
+		.response(StatusCodes.OK, {
+			description: "Categories seeded successfully",
 		});
 
 	// ===== Models (Public) =====

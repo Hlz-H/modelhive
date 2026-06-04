@@ -16,7 +16,7 @@ interface TodoItemProps {
 	todo: GetTodo200TodosItem;
 	index: number;
 	onToggle: (todo: GetTodo200TodosItem) => void;
-	onDelete: (id: number) => void;
+	onDelete: (id: string) => void;
 	isUpdating: boolean;
 	isDeleting: boolean;
 }

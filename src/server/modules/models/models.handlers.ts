@@ -4,7 +4,7 @@ import { HTTPException } from "hono/http-exception";
 import { StatusCodes } from "http-status-codes";
 import type { BaseContext } from "@/server/lib/worker-types";
 import { models, categories } from "./models.table";
-import type { InsertModel, UpdateModel } from "./models.schema";
+import type { InsertCategory, InsertModel, UpdateModel } from "./models.schema";
 
 // ===== Category Handlers =====
 
@@ -16,6 +16,67 @@ export const getAllCategories = async (c: Context<BaseContext>) => {
 		.orderBy(categories.name);
 
 	return c.json({ categories: allCategories }, StatusCodes.OK);
+};
+
+export const createCategory = async (
+	c: Context<BaseContext>,
+	input: { body?: InsertCategory },
+) => {
+	if (!input.body) {
+		throw new HTTPException(StatusCodes.BAD_REQUEST, {
+			message: "Request body is required",
+		});
+	}
+
+	const db = c.get("db");
+	const user = c.get("user");
+
+	if (!user || user.role !== "admin") {
+		throw new HTTPException(StatusCodes.FORBIDDEN, {
+			message: "Admin access required",
+		});
+	}
+
+	const [newCategory] = await db
+		.insert(categories)
+		.values(input.body)
+		.returning();
+
+	return c.json({ category: newCategory }, StatusCodes.CREATED);
+};
+
+export const seedCategories = async (c: Context<BaseContext>) => {
+	const db = c.get("db");
+
+	// Default categories
+	const defaultCategories = [
+		{ name: "AI Model", slug: "ai-model", description: "Artificial intelligence and machine learning models" },
+		{ name: "3D Model", slug: "3d-model", description: "3D models and meshes for rendering and games" },
+		{ name: "Design", slug: "design", description: "Design assets, templates, and resources" },
+		{ name: "Other", slug: "other", description: "Other types of models" },
+	];
+
+	const created = [];
+
+	for (const cat of defaultCategories) {
+		// Check if already exists
+		const existing = await db.query.categories.findFirst({
+			where: eq(categories.slug, cat.slug),
+		});
+
+		if (!existing) {
+			const [newCat] = await db
+				.insert(categories)
+				.values(cat)
+				.returning();
+			created.push(newCat);
+		}
+	}
+
+	return c.json({ 
+		message: `Seeded ${created.length} categories`,
+		categories: created,
+	}, StatusCodes.OK);
 };
 
 // ===== Model Handlers =====

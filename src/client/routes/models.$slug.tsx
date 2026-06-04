@@ -29,7 +29,7 @@ function ModelDetailPage() {
 			try {
 				const response = await fetch(`/api/models/${slug}`);
 				if (response.ok) {
-					const data = await response.json();
+					const data = await response.json() as { model: Model };
 					setModel(data.model);
 				} else {
 					setError("Model not found");

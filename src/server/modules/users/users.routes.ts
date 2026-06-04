@@ -20,18 +20,6 @@ import {
 } from "./users.schema";
 import { modelListResponseSchema } from "@/server/modules/models/models.schema";
 
-// Admin guard middleware - checks if user has admin role
-const adminGuard = async (c: any, next: any) => {
-	const user = c.get("user");
-	if (!user || user.role !== "admin") {
-		return c.json(
-			{ error: { code: "FORBIDDEN", message: "Admin access required" } },
-			StatusCodes.FORBIDDEN,
-		);
-	}
-	return next();
-};
-
 export const createUsersModule = () => {
 	const builder = new APIBuilder({
 		middleware: [optionalAuth, database()],
