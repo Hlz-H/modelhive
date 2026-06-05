@@ -42,6 +42,7 @@ interface Model {
 	createdAt: string;
 	tags: Tag[];
 	favoriteCount: number;
+	userId: string;
 }
 
 function ModelDetailPage() {
@@ -75,9 +76,9 @@ function ModelDetailPage() {
 	};
 
 	const [showCollectionPicker, setShowCollectionPicker] = useState(false);
-	const [collections, setCollections] = useState<
-		{ id: string; name: string; isPublic: boolean }[]
-	>([]);
+	const [collections, setCollections] = useState<{ id: string; name: string; isPublic: boolean }[]>([]);
+	const [isFollowing, setIsFollowing] = useState(false);
+	const [followLoading, setFollowLoading] = useState(false);
 	const { data: session } = useSession();
 	const collectionPickerRef = useRef<HTMLDivElement>(null);
 
@@ -146,6 +147,36 @@ function ModelDetailPage() {
 	useEffect(() => {
 		fetchModel();
 	}, [slug]);
+
+	useEffect(() => {
+		const checkFollow = async () => {
+			if (!session || !model?.userId) return;
+			try {
+				const response = await fetch(`/api/users/${model.userId}/follow-check`);
+				if (response.ok) {
+					const data = (await response.json()) as { isFollowing: boolean };
+					setIsFollowing(data.isFollowing);
+				}
+			} catch {}
+		};
+		checkFollow();
+	}, [session, model?.userId]);
+
+	const handleFollowToggle = async () => {
+		if (!model || followLoading) return;
+		setFollowLoading(true);
+		try {
+			const response = await fetch(`/api/users/${model.userId}/follow`, {
+				method: "POST",
+			});
+			if (response.ok) {
+				const data = (await response.json()) as { following: boolean };
+				setIsFollowing(data.following);
+			}
+		} catch {} finally {
+			setFollowLoading(false);
+		}
+	};
 
 	const handleFavorite = async () => {
 		if (!model) return;
@@ -249,6 +280,24 @@ function ModelDetailPage() {
 									</dd>
 								</div>
 							</dl>
+
+							{session && session.user.id !== model.userId && (
+								<button
+									type="button"
+									onClick={handleFollowToggle}
+									disabled={followLoading}
+									className={cn(
+										"mt-4 flex w-full items-center justify-center px-4 py-3 border text-sm",
+										isFollowing
+											? "border-gray-200"
+											: "border-gray-800 bg-gray-800 text-white",
+										interactive.base,
+										followLoading && "opacity-50 cursor-not-allowed",
+									)}
+								>
+									{isFollowing ? "Following" : "Follow"}
+								</button>
+							)}
 
 							{/* Favorite button */}
 							<button

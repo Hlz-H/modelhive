@@ -47,4 +47,6 @@ export const PUBLIC_API_ROUTES = [
 	"/api/users/*/following",
 	"/api/users/*/follow-stats",
 	"/api/users/*/follow-check",
+	"/api/users/me/follow-stats",
+	"/api/users/*/follow-stats",
 ] as const;

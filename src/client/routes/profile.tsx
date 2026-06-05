@@ -34,8 +34,27 @@ interface Collection {
 function ProfilePage() {
 	const [favorites, setFavorites] = useState<Model[]>([]);
 	const [collections, setCollections] = useState<Collection[]>([]);
+	const [followersCount, setFollowersCount] = useState(0);
+	const [followingCount, setFollowingCount] = useState(0);
 	const [loading, setLoading] = useState(true);
 	const [loadingCollections, setLoadingCollections] = useState(true);
+
+	useEffect(() => {
+		const fetchFollowStats = async () => {
+			try {
+				const response = await fetch("/api/users/me/follow-stats");
+				if (response.ok) {
+					const data = (await response.json()) as {
+						followersCount: number;
+						followingCount: number;
+					};
+					setFollowersCount(data.followersCount);
+					setFollowingCount(data.followingCount);
+				}
+			} catch {}
+		};
+		fetchFollowStats();
+	}, []);
 
 	useEffect(() => {
 		const fetchFavorites = async () => {
@@ -75,6 +94,18 @@ function ProfilePage() {
 		<div className={spacing.page}>
 			<div className={layout.container}>
 				<UserProfile />
+
+				{/* Follow Stats */}
+				<div className="mt-6 flex gap-8">
+					<div className="text-center">
+						<p className={cn(text.h2, colors.text.primary)}>{followersCount}</p>
+						<p className={cn(text.small, colors.text.secondary)}>Followers</p>
+					</div>
+					<div className="text-center">
+						<p className={cn(text.h2, colors.text.primary)}>{followingCount}</p>
+						<p className={cn(text.small, colors.text.secondary)}>Following</p>
+					</div>
+				</div>
 
 				{/* Collections Section */}
 				<div className="mt-8">

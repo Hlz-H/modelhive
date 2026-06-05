@@ -8,6 +8,7 @@ import {
 	getFollowers,
 	getFollowing,
 	getFollowStats,
+	getMyFollowStats,
 	checkFollow,
 } from "./follows.handlers";
 
@@ -59,6 +60,17 @@ export const createFollowsModule = () => {
 		.params({ id: z.string() })
 		.response(StatusCodes.OK, {
 			description: "Follow stats",
+		});
+
+	// Get my follow stats
+	builder
+		.get("/users/me/follow-stats", getMyFollowStats)
+		.summary("Get my follow stats")
+		.description("Returns current user's follower and following counts")
+		.tags("Follows")
+		.security([{ bearerAuth: [] }])
+		.response(StatusCodes.OK, {
+			description: "My follow stats",
 		});
 
 	// Check if current user follows

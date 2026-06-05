@@ -129,6 +129,35 @@ export const getFollowStats = async (
 	);
 };
 
+export const getMyFollowStats = async (c: Context<BaseContext>) => {
+	const user = c.get("user");
+	if (!user) {
+		throw new HTTPException(StatusCodes.UNAUTHORIZED, {
+			message: "Not authenticated",
+		});
+	}
+
+	const db = c.get("db");
+
+	const [followersResult] = await db
+		.select({ count: count() })
+		.from(follows)
+		.where(eq(follows.followingId, user.id));
+
+	const [followingResult] = await db
+		.select({ count: count() })
+		.from(follows)
+		.where(eq(follows.followerId, user.id));
+
+	return c.json(
+		{
+			followersCount: followersResult?.count || 0,
+			followingCount: followingResult?.count || 0,
+		},
+		StatusCodes.OK,
+	);
+};
+
 export const checkFollow = async (
 	c: Context<BaseContext>,
 	input: { params?: { id: string } },
