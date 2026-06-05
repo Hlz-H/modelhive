@@ -9,3 +9,7 @@ GITHUB_CLIENT_ID=your-github-client-id
 GITHUB_CLIENT_SECRET=your-github-client-secret
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
+
+# External API Integrations
+MANYFOLD_URL=https://your-manyfold-instance.example.com
+MANYFOLD_TOKEN=your-manyfold-api-token

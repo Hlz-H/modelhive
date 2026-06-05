@@ -13,6 +13,8 @@ declare namespace Cloudflare {
 		DISCORD_CLIENT_SECRET: string;
 		DB: D1Database;
 		ASSETS: Fetcher;
+		MANYFOLD_URL?: string;
+		MANYFOLD_TOKEN?: string;
 	}
 }
 interface CloudflareBindings extends Cloudflare.Env {

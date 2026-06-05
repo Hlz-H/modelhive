@@ -53,4 +53,7 @@ export const PUBLIC_API_ROUTES = [
 	// Comment routes (public GET, authenticated POST/DELETE)
 	"/api/models/*/comments",
 	"/api/models/*/comments/*",
+	// External API proxy routes (public)
+	"/api/external/icosa/*",
+	"/api/external/manyfold/*",
 ] as const;
