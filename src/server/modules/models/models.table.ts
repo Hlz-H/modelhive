@@ -48,6 +48,11 @@ export const models = sqliteTable("models", {
 		.default(true),
 	// View counter
 	viewCount: integer("view_count").notNull().default(0),
+	// Dataset-specific fields
+	rowsCount: integer("rows_count"),
+	license: text("license"),
+	language: text("language"),
+	datasetSize: integer("dataset_size"),
 	// Timestamps
 	createdAt: text("created_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
 	updatedAt: text("updated_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),

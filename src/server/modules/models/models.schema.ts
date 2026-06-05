@@ -66,7 +66,7 @@ export const modelSlugSchema = z
 	.meta({ example: "gpt-4o" })
 	.describe("Model slug");
 export const modelTypeSchema = z
-	.enum(["ai-model", "3d-model", "design", "other"])
+	.enum(["ai-model", "3d-model", "design", "dataset", "other"])
 	.describe("Model type");
 
 export const selectModelSchema = createSelectSchema(models, {
@@ -80,6 +80,10 @@ export const insertModelSchema = createInsertSchema(models, {
 	name: modelNameSchema,
 	slug: modelSlugSchema,
 	type: modelTypeSchema,
+	rowsCount: z.number().int().positive().optional(),
+	license: z.string().max(100).optional(),
+	language: z.string().max(50).optional(),
+	datasetSize: z.number().int().positive().optional(),
 }).omit({
 	id: true,
 	userId: true,

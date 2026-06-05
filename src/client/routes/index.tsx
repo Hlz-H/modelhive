@@ -154,6 +154,7 @@ function HomePage() {
 							<option value="ai-model">AI Model</option>
 							<option value="3d-model">3D Model</option>
 							<option value="design">Design</option>
+							<option value="dataset">Dataset</option>
 							<option value="other">Other</option>
 						</select>
 						<select

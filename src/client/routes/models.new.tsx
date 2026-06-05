@@ -22,26 +22,40 @@ function CreateModelPage() {
 	const [imageUrl, setImageUrl] = useState("");
 	const [externalUrl, setExternalUrl] = useState("");
 	const [tagsInput, setTagsInput] = useState("");
+	const [rowsCount, setRowsCount] = useState("");
+	const [license, setLicense] = useState("");
+	const [language, setLanguage] = useState("");
+	const [datasetSize, setDatasetSize] = useState("");
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
+
+	const isDataset = type === "dataset";
 
 	const handleCreate = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setLoading(true);
 		setError("");
 
+		const body: Record<string, unknown> = {
+			name,
+			slug,
+			description: description || null,
+			type,
+			imageUrl: imageUrl || null,
+			externalUrl: externalUrl || null,
+		};
+		if (isDataset) {
+			if (rowsCount) body.rowsCount = parseInt(rowsCount, 10);
+			if (license) body.license = license;
+			if (language) body.language = language;
+			if (datasetSize) body.datasetSize = parseInt(datasetSize, 10);
+		}
+
 		try {
 			const response = await fetch("/api/models", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					name,
-					slug,
-					description: description || null,
-					type,
-					imageUrl: imageUrl || null,
-					externalUrl: externalUrl || null,
-				}),
+				body: JSON.stringify(body),
 			});
 
 			const responseText = await response.text();
@@ -173,6 +187,7 @@ function CreateModelPage() {
 							<option value="ai-model">AI Model</option>
 							<option value="3d-model">3D Model</option>
 							<option value="design">Design</option>
+							<option value="dataset">Dataset</option>
 							<option value="other">Other</option>
 						</select>
 					</div>
@@ -210,6 +225,59 @@ function CreateModelPage() {
 							className={cn("w-full border border-gray-200 px-3 py-2", focus)}
 						/>
 					</div>
+
+					{isDataset && (
+						<>
+							<div>
+								<label className={cn(text.small, colors.text.secondary, "mb-1 block")}>
+									Rows
+								</label>
+								<input
+									type="number"
+									value={rowsCount}
+									onChange={(e) => setRowsCount(e.target.value)}
+									placeholder="10000"
+									className={cn("w-full border border-gray-200 px-3 py-2", focus)}
+								/>
+							</div>
+							<div>
+								<label className={cn(text.small, colors.text.secondary, "mb-1 block")}>
+									License
+								</label>
+								<input
+									type="text"
+									value={license}
+									onChange={(e) => setLicense(e.target.value)}
+									placeholder="MIT, Apache-2.0, CC-BY-4.0"
+									className={cn("w-full border border-gray-200 px-3 py-2", focus)}
+								/>
+							</div>
+							<div>
+								<label className={cn(text.small, colors.text.secondary, "mb-1 block")}>
+									Language
+								</label>
+								<input
+									type="text"
+									value={language}
+									onChange={(e) => setLanguage(e.target.value)}
+									placeholder="en, zh, multilingual"
+									className={cn("w-full border border-gray-200 px-3 py-2", focus)}
+								/>
+							</div>
+							<div>
+								<label className={cn(text.small, colors.text.secondary, "mb-1 block")}>
+									Size (bytes)
+								</label>
+								<input
+									type="number"
+									value={datasetSize}
+									onChange={(e) => setDatasetSize(e.target.value)}
+									placeholder="1048576"
+									className={cn("w-full border border-gray-200 px-3 py-2", focus)}
+								/>
+							</div>
+						</>
+					)}
 
 					<div>
 						<label

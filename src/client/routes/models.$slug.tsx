@@ -51,6 +51,10 @@ interface Model {
 	tags: Tag[];
 	favoriteCount: number;
 	userId: string;
+	rowsCount: number | null;
+	license: string | null;
+	language: string | null;
+	datasetSize: number | null;
 }
 
 function ModelDetailPage() {
@@ -326,6 +330,42 @@ function ModelDetailPage() {
 									<dt className={text.small}>Type</dt>
 									<dd className={text.base}>{model.type}</dd>
 								</div>
+								{model.type === "dataset" && (
+									<>
+										{model.rowsCount != null && (
+											<div>
+												<dt className={text.small}>Rows</dt>
+												<dd className={text.base}>
+													{model.rowsCount.toLocaleString()}
+												</dd>
+											</div>
+										)}
+										{model.datasetSize != null && (
+											<div>
+												<dt className={text.small}>Size</dt>
+												<dd className={text.base}>
+													{model.datasetSize >= 1073741824
+														? `${(model.datasetSize / 1073741824).toFixed(1)} GB`
+														: model.datasetSize >= 1048576
+															? `${(model.datasetSize / 1048576).toFixed(1)} MB`
+															: `${(model.datasetSize / 1024).toFixed(1)} KB`}
+												</dd>
+											</div>
+										)}
+										{model.license && (
+											<div>
+												<dt className={text.small}>License</dt>
+												<dd className={text.base}>{model.license}</dd>
+											</div>
+										)}
+										{model.language && (
+											<div>
+												<dt className={text.small}>Language</dt>
+												<dd className={text.base}>{model.language}</dd>
+											</div>
+										)}
+									</>
+								)}
 								<div>
 									<dt className={text.small}>Version</dt>
 									<dd className={text.base}>{model.version}</dd>
