@@ -9,6 +9,14 @@ import {
 	spacing,
 	text,
 } from "@/client/lib/design";
+import { ModelViewer } from "@/client/components/model/model-viewer";
+
+interface IcosaFormat {
+	formatType: string;
+	isPreferredForDownload: boolean;
+	isPreferredForGalleryViewer: boolean;
+	root: { url: string };
+}
 
 interface IcosaAsset {
 	assetId: string;
@@ -18,7 +26,7 @@ interface IcosaAsset {
 	thumbnail: { url: string };
 	triangleCount: number;
 	license: string;
-	formats: { formatType: string; isPreferredForDownload: boolean }[];
+	formats: IcosaFormat[];
 	url: string;
 }
 
@@ -36,6 +44,13 @@ function DiscoverPage() {
 	const [assets, setAssets] = useState<IcosaAsset[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState("");
+	const [previewAsset, setPreviewAsset] = useState<{
+		id: string;
+		name: string;
+		gltfUrl: string;
+	} | null>(null);
+	const [previewLoading, setPreviewLoading] = useState(false);
+	const [previewError, setPreviewError] = useState("");
 
 	const fetchAssets = async (q: string) => {
 		if (!q.trim()) return;
@@ -54,6 +69,36 @@ function DiscoverPage() {
 		} finally {
 			setLoading(false);
 		}
+	};
+
+	const openPreview = (e: React.MouseEvent, asset: IcosaAsset) => {
+		e.preventDefault();
+		e.stopPropagation();
+		setPreviewLoading(true);
+		setPreviewError("");
+
+		const gltfFormat = asset.formats?.find(
+			(f) =>
+				f.root?.url &&
+				(f.formatType === "GLTF2" || f.formatType === "GLTF1" || f.formatType === "GLB"),
+		) || asset.formats?.find((f) => f.root?.url);
+
+		if (gltfFormat?.root?.url) {
+			setPreviewAsset({
+				id: asset.assetId,
+				name: asset.displayName,
+				gltfUrl: gltfFormat.root.url,
+			});
+			setPreviewLoading(false);
+		} else {
+			setPreviewError("No previewable format available for this model.");
+			setPreviewLoading(false);
+		}
+	};
+
+	const closePreview = () => {
+		setPreviewAsset(null);
+		setPreviewError("");
 	};
 
 	const handleSubmit = (e: React.FormEvent) => {
@@ -132,11 +177,8 @@ function DiscoverPage() {
 				) : (
 					<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 						{assets.map((asset) => (
-							<a
+							<div
 								key={asset.assetId}
-								href={`https://icosa.gallery/view/${asset.assetId}`}
-								target="_blank"
-								rel="noopener noreferrer"
 								className="flex flex-col border border-gray-200 p-6 transition-colors hover:border-gray-400"
 							>
 								{asset.thumbnail?.url && (
@@ -179,8 +221,72 @@ function DiscoverPage() {
 									)}
 									<span>{formatLicense(asset.license)}</span>
 								</div>
-							</a>
+								<div className="mt-3 flex gap-2">
+									<button
+										type="button"
+										onClick={(e) => openPreview(e, asset)}
+										className={cn(
+											"flex-1 border border-gray-300 px-3 py-1.5 text-sm transition-colors hover:bg-gray-50",
+										)}
+									>
+										Preview
+									</button>
+									<a
+										href={`https://icosa.gallery/view/${asset.assetId}`}
+										target="_blank"
+										rel="noopener noreferrer"
+										className={cn(
+											"flex-1 border border-gray-300 px-3 py-1.5 text-sm text-center transition-colors hover:bg-gray-50",
+										)}
+									>
+										Open
+									</a>
+								</div>
+							</div>
 						))}
+					</div>
+				)}
+
+				{/* Preview Modal */}
+				{(previewAsset || previewLoading) && (
+					<div
+						className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+						onClick={closePreview}
+					>
+						<div
+							className="flex w-full max-w-4xl flex-col bg-white"
+							onClick={(e) => e.stopPropagation()}
+						>
+							<div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+								<h2 className={cn(text.h3, colors.text.primary)}>
+									{previewAsset?.name || "Loading..."}
+								</h2>
+								<button
+									type="button"
+									onClick={closePreview}
+									className={cn(
+										"text-gray-400 transition-colors hover:text-gray-600 text-xl leading-none",
+									)}
+								>
+									&times;
+								</button>
+							</div>
+							<div className="relative h-[60vh] w-full">
+								{previewLoading && (
+									<div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+										<p className="text-gray-500 text-sm">Loading model details...</p>
+									</div>
+								)}
+								{previewError && (
+									<div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+										<p className="text-red-500 text-sm">{previewError}</p>
+									</div>
+								)}
+								{previewAsset && !previewLoading && !previewError && (
+									<ModelViewer gltfUrl={previewAsset.gltfUrl} className="h-full w-full" />
+								)}
+							</div>
+						</div>
 					</div>
 				)}
 			</div>
