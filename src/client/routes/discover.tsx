@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
 	cn,
@@ -10,6 +10,7 @@ import {
 	text,
 } from "@/client/lib/design";
 import { ModelViewer } from "@/client/components/model/model-viewer";
+import { useSession } from "@/client/lib/auth";
 
 interface IcosaFormat {
 	formatType: string;
@@ -39,6 +40,8 @@ export const Route = createFileRoute("/discover")({
 });
 
 function DiscoverPage() {
+	const navigate = useNavigate();
+	const { data: session } = useSession();
 	const [query, setQuery] = useState("");
 	const [search, setSearch] = useState("");
 	const [assets, setAssets] = useState<IcosaAsset[]>([]);
@@ -51,6 +54,14 @@ function DiscoverPage() {
 	} | null>(null);
 	const [previewLoading, setPreviewLoading] = useState(false);
 	const [previewError, setPreviewError] = useState("");
+	const [importing, setImporting] = useState<Set<string>>(new Set());
+	const [importedIds, setImportedIds] = useState<Set<string>>(new Set());
+	const [importMsg, setImportMsg] = useState<{
+		id: string;
+		type: "success" | "error";
+		text: string;
+		modelSlug?: string;
+	} | null>(null);
 
 	const fetchAssets = async (q: string) => {
 		if (!q.trim()) return;
@@ -99,6 +110,70 @@ function DiscoverPage() {
 	const closePreview = () => {
 		setPreviewAsset(null);
 		setPreviewError("");
+	};
+
+	const importAsset = async (e: React.MouseEvent, asset: IcosaAsset) => {
+		e.preventDefault();
+		e.stopPropagation();
+
+		if (!session?.user) {
+			navigate({ to: "/login" });
+			return;
+		}
+
+		setImporting((prev) => new Set(prev).add(asset.assetId));
+		setImportMsg(null);
+
+		const gltfFormat = asset.formats?.find(
+			(f) =>
+				f.root?.url &&
+				(f.formatType === "GLTF2" || f.formatType === "GLTF1" || f.formatType === "GLB"),
+		) || asset.formats?.find((f) => f.root?.url);
+
+		try {
+			const response = await fetch("/api/external/icosa/import", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					assetId: asset.assetId,
+					displayName: asset.displayName,
+					description: asset.description || "",
+					authorName: asset.authorName,
+					thumbnailUrl: asset.thumbnail?.url || "",
+					license: asset.license,
+					gltfUrl: gltfFormat?.root?.url || "",
+				}),
+			});
+			if (response.ok) {
+				const data = (await response.json()) as { model: { slug: string } };
+				setImportedIds((prev) => new Set(prev).add(asset.assetId));
+				setImportMsg({
+					id: asset.assetId,
+					type: "success",
+					text: "Imported successfully!",
+					modelSlug: data.model.slug,
+				});
+			} else {
+				const err = (await response.json()) as { error?: { message?: string } };
+				setImportMsg({
+					id: asset.assetId,
+					type: "error",
+					text: err.error?.message || "Import failed",
+				});
+			}
+		} catch {
+			setImportMsg({
+				id: asset.assetId,
+				type: "error",
+				text: "Failed to import",
+			});
+		} finally {
+			setImporting((prev) => {
+				const next = new Set(prev);
+				next.delete(asset.assetId);
+				return next;
+			});
+		}
 	};
 
 	const handleSubmit = (e: React.FormEvent) => {
@@ -231,6 +306,23 @@ function DiscoverPage() {
 									>
 										Preview
 									</button>
+									<button
+										type="button"
+										onClick={(e) => importAsset(e, asset)}
+										disabled={importing.has(asset.assetId)}
+										className={cn(
+											"flex-1 border px-3 py-1.5 text-sm transition-colors",
+											importedIds.has(asset.assetId)
+												? "border-green-500 bg-green-50 text-green-700"
+												: "border-gray-300 hover:bg-gray-50",
+										)}
+									>
+										{importing.has(asset.assetId)
+											? "Importing..."
+											: importedIds.has(asset.assetId)
+												? "Imported"
+												: "Import"}
+									</button>
 									<a
 										href={`https://icosa.gallery/view/${asset.assetId}`}
 										target="_blank"
@@ -242,6 +334,27 @@ function DiscoverPage() {
 										Open
 									</a>
 								</div>
+								{importMsg && importMsg.id === asset.assetId && (
+									<div
+										className={cn(
+											"mt-2 text-xs",
+											importMsg.type === "success"
+												? "text-green-600"
+												: "text-red-600",
+										)}
+									>
+										{importMsg.type === "success" ? (
+											<a
+												href={`/models/${importMsg.modelSlug}`}
+												className="underline"
+											>
+												{importMsg.text} View model
+											</a>
+										) : (
+											importMsg.text
+										)}
+									</div>
+								)}
 							</div>
 						))}
 					</div>

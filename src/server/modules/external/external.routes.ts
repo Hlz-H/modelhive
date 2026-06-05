@@ -6,9 +6,11 @@ import { database } from "@/server/middleware/database";
 import {
 	searchIcosaAssets,
 	getIcosaAsset,
+	importIcosaAsset,
 	proxyManyfoldRequest,
 	proxyManyfoldFile,
 } from "./external.handlers";
+import { icosaImportSchema } from "./external.schema";
 
 export const createExternalModule = () => {
 	const builder = new APIBuilder({
@@ -38,6 +40,24 @@ export const createExternalModule = () => {
 		})
 		.response(StatusCodes.NOT_FOUND, {
 			description: "Asset not found",
+		});
+
+	// Import Icosa asset as ModelHive model
+	builder
+		.post("/icosa/import", importIcosaAsset)
+		.summary("Import Icosa asset")
+		.description("Import an Icosa Gallery asset as a new model in ModelHive")
+		.tags("External/Icosa")
+		.security([{ bearerAuth: [] }])
+		.body(icosaImportSchema)
+		.response(StatusCodes.CREATED, {
+			description: "Model created",
+		})
+		.response(StatusCodes.UNAUTHORIZED, {
+			description: "Authentication required",
+		})
+		.response(StatusCodes.BAD_REQUEST, {
+			description: "Invalid import data",
 		});
 
 	// Proxy Manyfold models API

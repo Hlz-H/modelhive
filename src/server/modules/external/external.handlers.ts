@@ -1,7 +1,10 @@
+import { eq } from "drizzle-orm";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { StatusCodes } from "http-status-codes";
 import type { BaseContext } from "@/server/lib/worker-types";
+import { models } from "@/server/modules/models/models.table";
+import { icosaImportSchema } from "./external.schema";
 
 const ICOSA_BASE = "https://api.icosa.gallery/v1";
 
@@ -54,6 +57,73 @@ export const getIcosaAsset = async (
 
 	const data = await response.json();
 	return c.json(data, StatusCodes.OK);
+};
+
+function slugify(text: string): string {
+	return text
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, "-")
+		.replace(/^-+|-+$/g, "")
+		.slice(0, 200);
+}
+
+export const importIcosaAsset = async (
+	c: Context<BaseContext>,
+	input: { body?: Record<string, unknown> },
+) => {
+	const user = c.get("user");
+	if (!user) {
+		throw new HTTPException(StatusCodes.UNAUTHORIZED, {
+			message: "Authentication required",
+		});
+	}
+
+	const parsed = icosaImportSchema.safeParse(input.body);
+	if (!parsed.success) {
+		throw new HTTPException(StatusCodes.BAD_REQUEST, {
+			message: "Invalid import data",
+			cause: { issues: parsed.error.issues },
+		});
+	}
+
+	const data = parsed.data;
+	const db = c.get("db");
+
+	let slug = slugify(data.displayName);
+	if (!slug) slug = `icosa-${data.assetId}`;
+
+	// Ensure slug uniqueness
+	let uniqueSlug = slug;
+	let suffix = 1;
+	while (true) {
+		const existing = await db.query.models.findFirst({
+			where: eq(models.slug, uniqueSlug),
+		});
+		if (!existing) break;
+		uniqueSlug = `${slug}-${suffix}`;
+		suffix++;
+	}
+
+	const description = data.description
+		? `${data.description}\n\nImported from Icosa Gallery (https://icosa.gallery/view/${data.assetId})`
+		: `Imported from Icosa Gallery (https://icosa.gallery/view/${data.assetId})`;
+
+	const [newModel] = await db
+		.insert(models)
+		.values({
+			name: data.displayName,
+			slug: uniqueSlug,
+			type: "3d-model",
+			description,
+			imageUrl: data.thumbnailUrl || null,
+			externalUrl: `https://icosa.gallery/view/${data.assetId}`,
+			license: data.license || null,
+			userId: user.id,
+			isPublished: true,
+		})
+		.returning();
+
+	return c.json({ model: newModel }, StatusCodes.CREATED);
 };
 
 export const proxyManyfoldRequest = async (c: Context<BaseContext>) => {
