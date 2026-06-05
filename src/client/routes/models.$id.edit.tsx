@@ -49,6 +49,10 @@ interface Model {
 	categoryId: string | null;
 	isPublished: boolean;
 	tags?: Tag[];
+	rowsCount: number | null;
+	license: string | null;
+	language: string | null;
+	datasetSize: number | null;
 }
 
 function EditModelPage() {
@@ -73,6 +77,10 @@ function EditModelPage() {
 	const [isPublished, setIsPublished] = useState(true);
 	const [modelTags, setModelTags] = useState<Tag[]>([]);
 	const [tagsInput, setTagsInput] = useState("");
+	const [rowsCount, setRowsCount] = useState("");
+	const [license, setLicense] = useState("");
+	const [language, setLanguage] = useState("");
+	const [datasetSize, setDatasetSize] = useState("");
 
 	// Version management
 	const [versions, setVersions] = useState<ModelVersion[]>([]);
@@ -116,6 +124,10 @@ function EditModelPage() {
 						setVersion(model.version || "1.0.0");
 						setCategoryId(model.categoryId || "");
 						setIsPublished(model.isPublished);
+						setRowsCount(model.rowsCount != null ? String(model.rowsCount) : "");
+						setLicense(model.license || "");
+						setLanguage(model.language || "");
+						setDatasetSize(model.datasetSize != null ? String(model.datasetSize) : "");
 						if (model.tags) {
 							setModelTags(model.tags);
 						}
@@ -221,6 +233,10 @@ function EditModelPage() {
 					version,
 					categoryId: categoryId || null,
 					isPublished,
+					rowsCount: rowsCount ? parseInt(rowsCount, 10) : null,
+					license: license || null,
+					language: language || null,
+					datasetSize: datasetSize ? parseInt(datasetSize, 10) : null,
 				}),
 			});
 
@@ -471,6 +487,7 @@ function EditModelPage() {
 							<option value="ai-model">AI Model</option>
 							<option value="3d-model">3D Model</option>
 							<option value="design">Design</option>
+							<option value="dataset">Dataset</option>
 							<option value="other">Other</option>
 						</select>
 					</div>
@@ -576,6 +593,27 @@ function EditModelPage() {
 							className={cn("w-full border border-gray-200 px-3 py-2", focus)}
 						/>
 					</div>
+
+					{type === "dataset" && (
+						<>
+							<div>
+								<label className={cn(text.small, colors.text.secondary, "mb-1 block")}>行数</label>
+								<input type="number" value={rowsCount} onChange={(e) => setRowsCount(e.target.value)} placeholder="10000" className={cn("w-full border border-gray-200 px-3 py-2", focus)} />
+							</div>
+							<div>
+								<label className={cn(text.small, colors.text.secondary, "mb-1 block")}>许可</label>
+								<input type="text" value={license} onChange={(e) => setLicense(e.target.value)} placeholder="MIT, Apache-2.0" className={cn("w-full border border-gray-200 px-3 py-2", focus)} />
+							</div>
+							<div>
+								<label className={cn(text.small, colors.text.secondary, "mb-1 block")}>语言</label>
+								<input type="text" value={language} onChange={(e) => setLanguage(e.target.value)} placeholder="en, zh" className={cn("w-full border border-gray-200 px-3 py-2", focus)} />
+							</div>
+							<div>
+								<label className={cn(text.small, colors.text.secondary, "mb-1 block")}>大小 (bytes)</label>
+								<input type="number" value={datasetSize} onChange={(e) => setDatasetSize(e.target.value)} placeholder="1048576" className={cn("w-full border border-gray-200 px-3 py-2", focus)} />
+							</div>
+						</>
+					)}
 
 					<div>
 						<label
