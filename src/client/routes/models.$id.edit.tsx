@@ -20,6 +20,15 @@ interface Tag {
 	slug: string;
 }
 
+interface ModelVersion {
+	id: string;
+	version: string;
+	fileUrl: string | null;
+	changelog: string | null;
+	downloadCount: number;
+	createdAt: string;
+}
+
 interface Model {
 	id: string;
 	name: string;
@@ -57,6 +66,13 @@ function EditModelPage() {
 	const [isPublished, setIsPublished] = useState(true);
 	const [modelTags, setModelTags] = useState<Tag[]>([]);
 	const [tagsInput, setTagsInput] = useState("");
+
+	// Version management
+	const [versions, setVersions] = useState<ModelVersion[]>([]);
+	const [newVersion, setNewVersion] = useState("");
+	const [newFileUrl, setNewFileUrl] = useState("");
+	const [newChangelog, setNewChangelog] = useState("");
+	const [uploading, setUploading] = useState(false);
 
 	useEffect(() => {
 		// 等待 session 加载完成
@@ -100,6 +116,12 @@ function EditModelPage() {
 						setError("Model not found");
 					}
 				}
+				// Fetch versions
+				const verRes = await fetch(`/api/models/${id}/versions`);
+				if (verRes.ok) {
+					const verData = await verRes.json() as { versions: ModelVersion[] };
+					setVersions(verData.versions);
+				}
 			} catch (err) {
 				setError("Failed to load model");
 			} finally {
@@ -109,6 +131,67 @@ function EditModelPage() {
 
 		fetchData();
 	}, [session, navigate, id]);
+
+	const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+
+		setUploading(true);
+		try {
+			const formData = new FormData();
+			formData.append("file", file);
+			const response = await fetch("/api/upload", {
+				method: "POST",
+				body: formData,
+			});
+			if (response.ok) {
+				const data = await response.json() as { url: string };
+				setNewFileUrl(data.url);
+			}
+		} catch (err) {
+			console.error("Failed to upload file:", err);
+		} finally {
+			setUploading(false);
+		}
+	};
+
+	const handleAddVersion = async () => {
+		if (!newVersion.trim()) return;
+		try {
+			const response = await fetch(`/api/models/${id}/versions`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					version: newVersion.trim(),
+					fileUrl: newFileUrl || null,
+					changelog: newChangelog || null,
+				}),
+			});
+			if (response.ok) {
+				const data = await response.json() as { version: ModelVersion };
+				setVersions((prev) => [data.version, ...prev]);
+				setNewVersion("");
+				setNewFileUrl("");
+				setNewChangelog("");
+			}
+		} catch (err) {
+			console.error("Failed to add version:", err);
+		}
+	};
+
+	const handleDeleteVersion = async (versionId: string) => {
+		if (!confirm("确定删除这个版本？")) return;
+		try {
+			const response = await fetch(`/api/models/${id}/versions/${versionId}`, {
+				method: "DELETE",
+			});
+			if (response.ok) {
+				setVersions((prev) => prev.filter((v) => v.id !== versionId));
+			}
+		} catch (err) {
+			console.error("Failed to delete version:", err);
+		}
+	};
 
 	const handleSave = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -188,6 +271,110 @@ function EditModelPage() {
 						<p className={cn(text.small, "text-red-600")}>{error}</p>
 					</div>
 				)}
+
+				{/* Version Management */}
+				<div className="max-w-2xl mb-8">
+					<h2 className={cn(text.h2, colors.text.primary, "mb-4")}>版本管理</h2>
+
+					{/* Existing versions */}
+					{versions.length > 0 && (
+						<div className="space-y-2 mb-6">
+							{versions.map((v) => (
+								<div key={v.id} className="flex items-center justify-between border border-gray-200 p-3">
+									<div>
+										<span className={cn(text.base, "font-medium")}>v{v.version}</span>
+										<span className={cn(text.small, colors.text.secondary, "ml-2")}>
+											{v.downloadCount} downloads
+										</span>
+										{v.changelog && (
+											<p className={cn(text.small, colors.text.secondary)}>{v.changelog}</p>
+										)}
+									</div>
+									<button
+										type="button"
+										onClick={() => handleDeleteVersion(v.id)}
+										className={cn(
+											"px-3 py-1 text-sm border border-red-200 text-red-600",
+											interactive.base,
+										)}
+									>
+										删除
+									</button>
+								</div>
+							))}
+						</div>
+					)}
+
+					{/* Add new version */}
+					<div className="border border-gray-200 p-4 space-y-3">
+						<h3 className={cn(text.h3)}>添加新版本</h3>
+						<div>
+							<label className={cn(text.small, colors.text.secondary, "mb-1 block")}>
+								版本号 *
+							</label>
+							<input
+								type="text"
+								value={newVersion}
+								onChange={(e) => setNewVersion(e.target.value)}
+								placeholder="1.1.0"
+								className={cn("w-full border border-gray-200 px-3 py-2", focus)}
+							/>
+						</div>
+						<div>
+							<label className={cn(text.small, colors.text.secondary, "mb-1 block")}>
+								文件上传
+							</label>
+							<div className="flex items-center gap-2">
+								<input
+									type="file"
+									id="fileUpload"
+									onChange={handleFileUpload}
+									className="hidden"
+								/>
+								<label
+									htmlFor="fileUpload"
+									className={cn(
+										"px-3 py-2 text-sm border border-gray-200 cursor-pointer",
+										interactive.base,
+									)}
+								>
+									{uploading ? "上传中..." : "选择文件"}
+								</label>
+								{newFileUrl && (
+									<span className={cn(text.small, colors.text.secondary)}>
+										已上传
+									</span>
+								)}
+							</div>
+						</div>
+						<div>
+							<label className={cn(text.small, colors.text.secondary, "mb-1 block")}>
+								更新说明
+							</label>
+							<textarea
+								value={newChangelog}
+								onChange={(e) => setNewChangelog(e.target.value)}
+								placeholder="Bug fixes and performance improvements"
+								rows={2}
+								className={cn("w-full border border-gray-200 px-3 py-2", focus)}
+							/>
+						</div>
+						<button
+							type="button"
+							onClick={handleAddVersion}
+							disabled={!newVersion.trim()}
+							className={cn(
+								"px-4 py-2",
+								colors.bg.inverse,
+								colors.text.inverse,
+								interactive.base,
+								!newVersion.trim() && "opacity-50 cursor-not-allowed",
+							)}
+						>
+							添加版本
+						</button>
+					</div>
+				</div>
 
 				<form onSubmit={handleSave} className="max-w-2xl space-y-6">
 					<div>

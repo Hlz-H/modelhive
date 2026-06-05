@@ -15,7 +15,9 @@ declare namespace Cloudflare {
 		ASSETS: Fetcher;
 	}
 }
-interface CloudflareBindings extends Cloudflare.Env {}
+interface CloudflareBindings extends Cloudflare.Env {
+	MODEL_FILES: R2Bucket;
+}
 type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };

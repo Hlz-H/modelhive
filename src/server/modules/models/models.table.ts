@@ -84,6 +84,23 @@ export const modelTags = sqliteTable("model_tags", {
 		.references(() => tags.id, { onDelete: "cascade" }),
 });
 
+// Model Versions table
+export const modelVersions = sqliteTable("model_versions", {
+	id: text("id")
+		.primaryKey()
+		.$defaultFn(() => generateId()),
+	modelId: text("model_id")
+		.notNull()
+		.references(() => models.id, { onDelete: "cascade" }),
+	version: text("version").notNull(),
+	fileUrl: text("file_url"),
+	changelog: text("changelog"),
+	downloadCount: integer("download_count").notNull().default(0),
+	createdAt: text("created_at")
+		.notNull()
+		.default(sql`(CURRENT_TIMESTAMP)`),
+});
+
 // Favorites table
 export const favorites = sqliteTable("favorites", {
 	id: text("id")

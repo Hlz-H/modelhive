@@ -16,6 +16,13 @@ import {
 	createTag,
 	addModelTags,
 	removeModelTag,
+	getModelVersions,
+	createModelVersion,
+	updateModelVersion,
+	deleteModelVersion,
+	incrementDownloadCount,
+	uploadFile,
+	serveFile,
 	toggleFavorite,
 	getModelFavorites,
 } from "./models.handlers";
@@ -29,6 +36,10 @@ import {
 	insertCategorySchema,
 	tagListResponseSchema,
 	tagResponseSchema,
+	versionListResponseSchema,
+	versionResponseSchema,
+	insertModelVersionSchema,
+	updateModelVersionSchema,
 } from "./models.schema";
 
 export const createModelsModule = () => {
@@ -214,6 +225,109 @@ export const createModelsModule = () => {
 		})
 		.response(StatusCodes.FORBIDDEN, {
 			description: "Not authorized",
+		});
+
+	// ===== File Upload =====
+
+	// Upload file (authenticated)
+	builder
+		.post("/upload", uploadFile)
+		.summary("Upload file")
+		.description("Uploads a file to cloud storage (authenticated)")
+		.tags("Files")
+		.security([{ bearerAuth: [] }])
+		.response(StatusCodes.CREATED, {
+			description: "File uploaded successfully",
+		})
+		.response(StatusCodes.UNAUTHORIZED, {
+			description: "Not authenticated",
+		});
+
+	// Serve file (public)
+	builder
+		.get("/files/:key", serveFile)
+		.summary("Serve file")
+		.description("Serves an uploaded file by its key")
+		.tags("Files")
+		.response(StatusCodes.OK, {
+			description: "File served",
+		})
+		.response(StatusCodes.NOT_FOUND, {
+			description: "File not found",
+		});
+
+	// ===== Model Versions =====
+
+	// List versions (public)
+	builder
+		.get("/models/:id/versions", getModelVersions)
+		.summary("List model versions")
+		.description("Returns all versions for a model")
+		.tags("Versions")
+		.params({ id: modelIdSchema })
+		.response(StatusCodes.OK, {
+			description: "Versions retrieved",
+			schema: versionListResponseSchema,
+		});
+
+	// Create version (owner/admin)
+	builder
+		.post("/models/:id/versions", createModelVersion)
+		.summary("Create model version")
+		.description("Creates a new version for a model (owner or admin only)")
+		.tags("Versions")
+		.security([{ bearerAuth: [] }])
+		.params({ id: modelIdSchema })
+		.body(insertModelVersionSchema)
+		.response(StatusCodes.CREATED, {
+			description: "Version created",
+			schema: versionResponseSchema,
+		})
+		.response(StatusCodes.FORBIDDEN, {
+			description: "Not authorized",
+		});
+
+	// Update version (owner/admin)
+	builder
+		.put("/models/:id/versions/:versionId", updateModelVersion)
+		.summary("Update model version")
+		.description("Updates a version of a model (owner or admin only)")
+		.tags("Versions")
+		.security([{ bearerAuth: [] }])
+		.params({ id: modelIdSchema, versionId: z.string() })
+		.body(updateModelVersionSchema)
+		.response(StatusCodes.OK, {
+			description: "Version updated",
+			schema: versionResponseSchema,
+		})
+		.response(StatusCodes.FORBIDDEN, {
+			description: "Not authorized",
+		});
+
+	// Delete version (owner/admin)
+	builder
+		.delete("/models/:id/versions/:versionId", deleteModelVersion)
+		.summary("Delete model version")
+		.description("Deletes a version of a model (owner or admin only)")
+		.tags("Versions")
+		.security([{ bearerAuth: [] }])
+		.params({ id: modelIdSchema, versionId: z.string() })
+		.response(StatusCodes.NO_CONTENT, {
+			description: "Version deleted",
+		})
+		.response(StatusCodes.FORBIDDEN, {
+			description: "Not authorized",
+		});
+
+	// Increment download count (public)
+	builder
+		.post("/models/:id/versions/:versionId/download", incrementDownloadCount)
+		.summary("Increment download count")
+		.description("Increments the download count for a model version")
+		.tags("Versions")
+		.params({ id: modelIdSchema, versionId: z.string() })
+		.response(StatusCodes.OK, {
+			description: "Download count incremented",
 		});
 
 	// ===== Favorites =====

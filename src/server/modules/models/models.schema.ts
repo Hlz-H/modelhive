@@ -1,6 +1,6 @@
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod/v4";
-import { categories, models, tags } from "./models.table";
+import { categories, models, tags, modelVersions } from "./models.table";
 
 // ===== Categories =====
 
@@ -89,6 +89,35 @@ export const tagListResponseSchema = z.object({
 	tags: z.array(selectTagSchema),
 });
 
+// ===== Model Versions =====
+
+export const versionSchema = z.string().meta({ example: "1.0.0" }).describe("Version string");
+
+export const selectModelVersionSchema = createSelectSchema(modelVersions, {
+	id: z.string(),
+	modelId: z.string(),
+	version: versionSchema,
+});
+
+export const insertModelVersionSchema = createInsertSchema(modelVersions, {
+	version: versionSchema,
+}).omit({
+	id: true,
+	modelId: true,
+	downloadCount: true,
+	createdAt: true,
+});
+
+export const updateModelVersionSchema = insertModelVersionSchema.partial();
+
+export const versionResponseSchema = z.object({
+	version: selectModelVersionSchema,
+});
+
+export const versionListResponseSchema = z.object({
+	versions: z.array(selectModelVersionSchema),
+});
+
 // Extended model response with tags and favorite count
 export const modelWithDetailsSchema = selectModelSchema.extend({
 	favoriteCount: z.number().int().default(0),
@@ -115,3 +144,6 @@ export type SelectModel = z.infer<typeof selectModelSchema>;
 export type InsertModel = z.infer<typeof insertModelSchema>;
 export type UpdateModel = z.infer<typeof updateModelSchema>;
 export type SelectTag = z.infer<typeof selectTagSchema>;
+export type SelectModelVersion = z.infer<typeof selectModelVersionSchema>;
+export type InsertModelVersion = z.infer<typeof insertModelVersionSchema>;
+export type UpdateModelVersion = z.infer<typeof updateModelVersionSchema>;

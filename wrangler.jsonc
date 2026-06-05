@@ -26,5 +26,11 @@
       "database_id": "f2debf97-c6f6-4e0a-a3db-4aeafe5924ca",
       "migrations_dir": "src/server/db/migrations"
     }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MODEL_FILES",
+      "bucket_name": "modelhive-files"
+    }
   ]
 }

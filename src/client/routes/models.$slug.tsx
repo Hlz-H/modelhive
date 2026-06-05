@@ -12,6 +12,15 @@ interface Tag {
 	slug: string;
 }
 
+interface ModelVersion {
+	id: string;
+	version: string;
+	fileUrl: string | null;
+	changelog: string | null;
+	downloadCount: number;
+	createdAt: string;
+}
+
 interface Model {
 	id: string;
 	name: string;
@@ -29,22 +38,45 @@ interface Model {
 function ModelDetailPage() {
 	const { slug } = Route.useParams();
 	const [model, setModel] = useState<Model | null>(null);
+	const [versions, setVersions] = useState<ModelVersion[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState("");
 
 	const fetchModel = async () => {
 		try {
-			const response = await fetch(`/api/models/${slug}`);
-			if (response.ok) {
-				const data = await response.json() as { model: Model };
+			const [modelRes, versionsRes] = await Promise.all([
+				fetch(`/api/models/${slug}`),
+				fetch(`/api/models/${slug}/versions`),
+			]);
+			if (modelRes.ok) {
+				const data = await modelRes.json() as { model: Model };
 				setModel(data.model);
 			} else {
 				setError("Model not found");
+			}
+			if (versionsRes.ok) {
+				const data = await versionsRes.json() as { versions: ModelVersion[] };
+				setVersions(data.versions);
 			}
 		} catch (err) {
 			setError("Failed to load model");
 		} finally {
 			setLoading(false);
+		}
+	};
+
+	const handleDownload = async (versionId: string) => {
+		try {
+			await fetch(`/api/models/${model?.id}/versions/${versionId}/download`, {
+				method: "POST",
+			});
+			setVersions((prev) =>
+				prev.map((v) =>
+					v.id === versionId ? { ...v, downloadCount: v.downloadCount + 1 } : v,
+				),
+			);
+		} catch (err) {
+			console.error("Failed to track download:", err);
 		}
 	};
 
@@ -184,6 +216,44 @@ function ModelDetailPage() {
 								</a>
 							)}
 						</div>
+
+						{/* Versions */}
+						{versions.length > 0 && (
+							<div className="border border-gray-200 p-6 mt-6">
+								<h3 className={cn(text.h3, "mb-4")}>Versions</h3>
+								<div className="space-y-3">
+									{versions.map((v) => (
+										<div key={v.id} className="border-b border-gray-100 pb-3 last:border-b-0 last:pb-0">
+											<div className="flex items-center justify-between mb-1">
+												<span className={cn(text.base, "font-medium")}>v{v.version}</span>
+												<span className={cn(text.small, colors.text.secondary)}>
+													{v.downloadCount} downloads
+												</span>
+											</div>
+											{v.changelog && (
+												<p className={cn(text.small, colors.text.secondary, "mb-2")}>
+													{v.changelog}
+												</p>
+											)}
+											{v.fileUrl && (
+												<a
+													href={v.fileUrl}
+													target="_blank"
+													rel="noopener noreferrer"
+													onClick={() => handleDownload(v.id)}
+													className={cn(
+														"inline-flex items-center gap-1 px-3 py-1 text-sm border border-gray-200",
+														interactive.base,
+													)}
+												>
+													Download
+												</a>
+											)}
+										</div>
+									))}
+								</div>
+							</div>
+						)}
 					</div>
 				</div>
 			</div>

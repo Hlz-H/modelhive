@@ -3,8 +3,8 @@ import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { StatusCodes } from "http-status-codes";
 import type { BaseContext } from "@/server/lib/worker-types";
-import { models, categories, tags, modelTags, favorites } from "./models.table";
-import type { InsertCategory, InsertModel, UpdateModel, SelectTag } from "./models.schema";
+import { models, categories, tags, modelTags, modelVersions, favorites } from "./models.table";
+import type { InsertCategory, InsertModel, UpdateModel, SelectTag, InsertModelVersion, UpdateModelVersion } from "./models.schema";
 
 // ===== Category Handlers =====
 
@@ -543,6 +543,267 @@ export const removeModelTag = async (
 		.where(and(eq(modelTags.modelId, modelId), eq(modelTags.tagId, tagId)));
 
 	return new Response(null, { status: StatusCodes.NO_CONTENT });
+};
+
+// ===== File Upload Handlers =====
+
+export const uploadFile = async (c: Context<BaseContext>) => {
+	const user = c.get("user");
+	if (!user) {
+		throw new HTTPException(StatusCodes.UNAUTHORIZED, {
+			message: "Not authenticated",
+		});
+	}
+
+	const body = await c.req.parseBody();
+	const file = body.file as File | undefined;
+
+	if (!file || !(file instanceof File)) {
+		throw new HTTPException(StatusCodes.BAD_REQUEST, {
+			message: "File is required",
+		});
+	}
+
+	// Validate file size (100MB max)
+	const maxSize = 100 * 1024 * 1024;
+	if (file.size > maxSize) {
+		throw new HTTPException(StatusCodes.BAD_REQUEST, {
+			message: "File too large (max 100MB)",
+		});
+	}
+
+	const key = `${crypto.randomUUID()}-${file.name}`;
+	const buffer = await file.arrayBuffer();
+	const r2 = c.env.MODEL_FILES;
+
+	await r2.put(key, buffer, {
+		httpMetadata: { contentType: file.type },
+	});
+
+	return c.json({ url: `/api/files/${key}` }, StatusCodes.CREATED);
+};
+
+export const serveFile = async (c: Context<BaseContext>) => {
+	const key = c.req.param("key");
+	if (!key) {
+		throw new HTTPException(StatusCodes.BAD_REQUEST, {
+			message: "File key is required",
+		});
+	}
+
+	const r2 = c.env.MODEL_FILES;
+	const object = await r2.get(key);
+
+	if (!object) {
+		throw new HTTPException(StatusCodes.NOT_FOUND, {
+			message: "File not found",
+		});
+	}
+
+	const headers = new Headers();
+	object.writeHttpMetadata(headers);
+
+	return new Response(object.body, {
+		headers,
+	});
+};
+
+// ===== Model Version Handlers =====
+
+export const getModelVersions = async (
+	c: Context<BaseContext>,
+	input: { params?: { id: string } },
+) => {
+	const modelId = input.params?.id;
+	if (!modelId) {
+		throw new HTTPException(StatusCodes.BAD_REQUEST, {
+			message: "Model ID is required",
+		});
+	}
+
+	const db = c.get("db");
+	const versionList = await db
+		.select()
+		.from(modelVersions)
+		.where(eq(modelVersions.modelId, modelId))
+		.orderBy(desc(modelVersions.createdAt));
+
+	return c.json({ versions: versionList }, StatusCodes.OK);
+};
+
+export const createModelVersion = async (
+	c: Context<BaseContext>,
+	input: { params?: { id: string }; body?: InsertModelVersion },
+) => {
+	const modelId = input.params?.id;
+	if (!modelId || !input.body) {
+		throw new HTTPException(StatusCodes.BAD_REQUEST, {
+			message: "Model ID and body are required",
+		});
+	}
+
+	const db = c.get("db");
+	const user = c.get("user");
+
+	if (!user) {
+		throw new HTTPException(StatusCodes.UNAUTHORIZED, {
+			message: "Not authenticated",
+		});
+	}
+
+	const model = await db.query.models.findFirst({
+		where: eq(models.id, modelId),
+	});
+
+	if (!model) {
+		throw new HTTPException(StatusCodes.NOT_FOUND, {
+			message: "Model not found",
+		});
+	}
+
+	if (model.userId !== user.id && user.role !== "admin") {
+		throw new HTTPException(StatusCodes.FORBIDDEN, {
+			message: "Not authorized to modify this model",
+		});
+	}
+
+	const [newVersion] = await db
+		.insert(modelVersions)
+		.values({
+			...input.body,
+			modelId,
+		})
+		.returning();
+
+	return c.json({ version: newVersion }, StatusCodes.CREATED);
+};
+
+export const updateModelVersion = async (
+	c: Context<BaseContext>,
+	input: { params?: { id: string; versionId: string }; body?: UpdateModelVersion },
+) => {
+	const { id: modelId, versionId } = input.params || {};
+	if (!modelId || !versionId || !input.body) {
+		throw new HTTPException(StatusCodes.BAD_REQUEST, {
+			message: "Model ID, Version ID, and body are required",
+		});
+	}
+
+	const db = c.get("db");
+	const user = c.get("user");
+
+	if (!user) {
+		throw new HTTPException(StatusCodes.UNAUTHORIZED, {
+			message: "Not authenticated",
+		});
+	}
+
+	const model = await db.query.models.findFirst({
+		where: eq(models.id, modelId),
+	});
+
+	if (!model) {
+		throw new HTTPException(StatusCodes.NOT_FOUND, {
+			message: "Model not found",
+		});
+	}
+
+	if (model.userId !== user.id && user.role !== "admin") {
+		throw new HTTPException(StatusCodes.FORBIDDEN, {
+			message: "Not authorized to modify this model",
+		});
+	}
+
+	const [updatedVersion] = await db
+		.update(modelVersions)
+		.set(input.body)
+		.where(and(eq(modelVersions.id, versionId), eq(modelVersions.modelId, modelId)))
+		.returning();
+
+	if (!updatedVersion) {
+		throw new HTTPException(StatusCodes.NOT_FOUND, {
+			message: "Version not found",
+		});
+	}
+
+	return c.json({ version: updatedVersion }, StatusCodes.OK);
+};
+
+export const deleteModelVersion = async (
+	c: Context<BaseContext>,
+	input: { params?: { id: string; versionId: string } },
+) => {
+	const { id: modelId, versionId } = input.params || {};
+	if (!modelId || !versionId) {
+		throw new HTTPException(StatusCodes.BAD_REQUEST, {
+			message: "Model ID and Version ID are required",
+		});
+	}
+
+	const db = c.get("db");
+	const user = c.get("user");
+
+	if (!user) {
+		throw new HTTPException(StatusCodes.UNAUTHORIZED, {
+			message: "Not authenticated",
+		});
+	}
+
+	const model = await db.query.models.findFirst({
+		where: eq(models.id, modelId),
+	});
+
+	if (!model) {
+		throw new HTTPException(StatusCodes.NOT_FOUND, {
+			message: "Model not found",
+		});
+	}
+
+	if (model.userId !== user.id && user.role !== "admin") {
+		throw new HTTPException(StatusCodes.FORBIDDEN, {
+			message: "Not authorized to modify this model",
+		});
+	}
+
+	const result = await db
+		.delete(modelVersions)
+		.where(and(eq(modelVersions.id, versionId), eq(modelVersions.modelId, modelId)));
+
+	if (!result) {
+		throw new HTTPException(StatusCodes.NOT_FOUND, {
+			message: "Version not found",
+		});
+	}
+
+	return new Response(null, { status: StatusCodes.NO_CONTENT });
+};
+
+export const incrementDownloadCount = async (
+	c: Context<BaseContext>,
+	input: { params?: { id: string; versionId: string } },
+) => {
+	const { id: modelId, versionId } = input.params || {};
+	if (!modelId || !versionId) {
+		throw new HTTPException(StatusCodes.BAD_REQUEST, {
+			message: "Model ID and Version ID are required",
+		});
+	}
+
+	const db = c.get("db");
+
+	const [updated] = await db
+		.update(modelVersions)
+		.set({ downloadCount: sql`download_count + 1` })
+		.where(and(eq(modelVersions.id, versionId), eq(modelVersions.modelId, modelId)))
+		.returning();
+
+	if (!updated) {
+		throw new HTTPException(StatusCodes.NOT_FOUND, {
+			message: "Version not found",
+		});
+	}
+
+	return c.json({ downloadCount: updated.downloadCount }, StatusCodes.OK);
 };
 
 // ===== Favorite Handlers =====
