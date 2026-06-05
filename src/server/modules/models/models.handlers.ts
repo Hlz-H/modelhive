@@ -453,6 +453,66 @@ export const createTag = async (
 	return c.json({ tag: newTag }, StatusCodes.CREATED);
 };
 
+export const updateTag = async (
+	c: Context<BaseContext>,
+	input: { params?: { id: string }; body?: { name?: string; slug?: string } },
+) => {
+	const tagId = input.params?.id;
+	if (!tagId || !input.body) {
+		throw new HTTPException(StatusCodes.BAD_REQUEST, {
+			message: "Tag ID and body are required",
+		});
+	}
+
+	const db = c.get("db");
+	const user = c.get("user");
+
+	if (!user || user.role !== "admin") {
+		throw new HTTPException(StatusCodes.FORBIDDEN, {
+			message: "Admin access required",
+		});
+	}
+
+	const [updated] = await db
+		.update(tags)
+		.set(input.body)
+		.where(eq(tags.id, tagId))
+		.returning();
+
+	if (!updated) {
+		throw new HTTPException(StatusCodes.NOT_FOUND, {
+			message: "Tag not found",
+		});
+	}
+
+	return c.json({ tag: updated }, StatusCodes.OK);
+};
+
+export const deleteTag = async (
+	c: Context<BaseContext>,
+	input: { params?: { id: string } },
+) => {
+	const tagId = input.params?.id;
+	if (!tagId) {
+		throw new HTTPException(StatusCodes.BAD_REQUEST, {
+			message: "Tag ID is required",
+		});
+	}
+
+	const db = c.get("db");
+	const user = c.get("user");
+
+	if (!user || user.role !== "admin") {
+		throw new HTTPException(StatusCodes.FORBIDDEN, {
+			message: "Admin access required",
+		});
+	}
+
+	await db.delete(tags).where(eq(tags.id, tagId));
+
+	return new Response(null, { status: StatusCodes.NO_CONTENT });
+};
+
 export const addModelTags = async (
 	c: Context<BaseContext>,
 	input: { params?: { id: string }; body?: { tags: string[] } },

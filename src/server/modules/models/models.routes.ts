@@ -11,12 +11,13 @@ import {
 	createTag,
 	deleteModel,
 	deleteModelVersion,
+	deleteTag,
 	getAllCategories,
 	getAllTags,
 	getModelBySlug,
 	getModelFavorites,
-	getModels,
 	getModelVersions,
+	getModels,
 	incrementDownloadCount,
 	removeModelTag,
 	seedCategories,
@@ -24,6 +25,7 @@ import {
 	toggleFavorite,
 	updateModel,
 	updateModelVersion,
+	updateTag,
 	uploadFile,
 } from "./models.handlers";
 import {
@@ -193,6 +195,38 @@ export const createModelsModule = () => {
 		.response(StatusCodes.CREATED, {
 			description: "Tag created successfully",
 			schema: tagResponseSchema,
+		})
+		.response(StatusCodes.FORBIDDEN, {
+			description: "Admin access required",
+		});
+
+	// Update tag (admin)
+	builder
+		.put("/tags/:id", updateTag)
+		.summary("Update tag")
+		.description("Updates a tag name or slug (admin only)")
+		.tags("Tags")
+		.security([{ bearerAuth: [] }])
+		.params({ id: z.string() })
+		.body(z.object({ name: z.string().optional(), slug: z.string().optional() }))
+		.response(StatusCodes.OK, {
+			description: "Tag updated",
+			schema: tagResponseSchema,
+		})
+		.response(StatusCodes.FORBIDDEN, {
+			description: "Admin access required",
+		});
+
+	// Delete tag (admin)
+	builder
+		.delete("/tags/:id", deleteTag)
+		.summary("Delete tag")
+		.description("Deletes a tag (admin only)")
+		.tags("Tags")
+		.security([{ bearerAuth: [] }])
+		.params({ id: z.string() })
+		.response(StatusCodes.NO_CONTENT, {
+			description: "Tag deleted",
 		})
 		.response(StatusCodes.FORBIDDEN, {
 			description: "Admin access required",
