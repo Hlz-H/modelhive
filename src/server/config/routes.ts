@@ -49,4 +49,7 @@ export const PUBLIC_API_ROUTES = [
 	"/api/users/*/follow-check",
 	"/api/users/me/follow-stats",
 	"/api/users/*/follow-stats",
+	// Comment routes (public GET, authenticated POST/DELETE)
+	"/api/models/*/comments",
+	"/api/models/*/comments/*",
 ] as const;

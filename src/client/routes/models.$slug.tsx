@@ -21,6 +21,14 @@ interface Tag {
 	slug: string;
 }
 
+interface Comment {
+	id: string;
+	modelId: string;
+	userId: string;
+	content: string;
+	createdAt: string;
+}
+
 interface ModelVersion {
 	id: string;
 	version: string;
@@ -79,6 +87,9 @@ function ModelDetailPage() {
 	const [collections, setCollections] = useState<{ id: string; name: string; isPublic: boolean }[]>([]);
 	const [isFollowing, setIsFollowing] = useState(false);
 	const [followLoading, setFollowLoading] = useState(false);
+	const [comments, setComments] = useState<Comment[]>([]);
+	const [commentInput, setCommentInput] = useState("");
+	const [commentLoading, setCommentLoading] = useState(false);
 	const { data: session } = useSession();
 	const collectionPickerRef = useRef<HTMLDivElement>(null);
 
@@ -144,9 +155,55 @@ function ModelDetailPage() {
 		}
 	};
 
+	const fetchComments = async () => {
+		if (!model?.id) return;
+		try {
+			const response = await fetch(`/api/models/${model.id}/comments`);
+			if (response.ok) {
+				const data = (await response.json()) as { comments: Comment[] };
+				setComments(data.comments);
+			}
+		} catch {}
+	};
+
+	const handlePostComment = async () => {
+		if (!model || !commentInput.trim() || commentLoading) return;
+		setCommentLoading(true);
+		try {
+			const response = await fetch(`/api/models/${model.id}/comments`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ content: commentInput.trim() }),
+			});
+			if (response.ok) {
+				setCommentInput("");
+				fetchComments();
+			}
+		} catch {} finally {
+			setCommentLoading(false);
+		}
+	};
+
+	const handleDeleteComment = async (commentId: string) => {
+		if (!model || !confirm("Delete this comment?")) return;
+		try {
+			const response = await fetch(
+				`/api/models/${model.id}/comments/${commentId}`,
+				{ method: "DELETE" },
+			);
+			if (response.ok) {
+				setComments((prev) => prev.filter((c) => c.id !== commentId));
+			}
+		} catch {}
+	};
+
 	useEffect(() => {
 		fetchModel();
 	}, [slug]);
+
+	useEffect(() => {
+		if (model?.id) fetchComments();
+	}, [model?.id]);
 
 	useEffect(() => {
 		const checkFollow = async () => {
@@ -426,6 +483,89 @@ function ModelDetailPage() {
 							</div>
 						)}
 					</div>
+				</div>
+				{/* Comments Section */}
+				<div className="mt-12 border-t border-gray-200 pt-8">
+					<h2 className={cn(text.h2, colors.text.primary, "mb-6")}>
+						Comments ({comments.length})
+					</h2>
+
+					{session ? (
+						<div className="mb-8 flex gap-3">
+							<textarea
+								value={commentInput}
+								onChange={(e) => setCommentInput(e.target.value)}
+								placeholder="Share your thoughts..."
+								rows={3}
+								className={cn(
+									"flex-1 border border-gray-200 px-3 py-2 text-sm",
+									focus,
+								)}
+							/>
+							<button
+								type="button"
+								onClick={handlePostComment}
+								disabled={commentLoading || !commentInput.trim()}
+								className={cn(
+									"self-end px-6 py-2 text-sm",
+									colors.bg.inverse,
+									colors.text.inverse,
+									interactive.base,
+									(commentLoading || !commentInput.trim()) &&
+										"cursor-not-allowed opacity-50",
+								)}
+							>
+								{commentLoading ? "Posting..." : "Post"}
+							</button>
+						</div>
+					) : (
+						<p className={cn(text.small, colors.text.secondary, "mb-8")}>
+							<a href="/login" className="underline">
+								Log in
+							</a>{" "}
+							to leave a comment
+						</p>
+					)}
+
+					{comments.length === 0 ? (
+						<p className={cn(text.base, colors.text.secondary)}>
+							No comments yet. Be the first to share your thoughts!
+						</p>
+					) : (
+						<div className="space-y-4">
+							{comments.map((comment) => (
+								<div
+									key={comment.id}
+									className="border border-gray-200 p-4"
+								>
+									<div className="mb-1 flex items-center justify-between">
+										<span className={cn(text.small, colors.text.secondary)}>
+											User {comment.userId.substring(0, 8)}
+										</span>
+										<div className="flex items-center gap-2">
+											<span className={cn(text.small, colors.text.secondary)}>
+												{new Date(comment.createdAt).toLocaleDateString()}
+											</span>
+											{session?.user?.id === comment.userId && (
+												<button
+													type="button"
+													onClick={() => handleDeleteComment(comment.id)}
+													className={cn(
+														"text-xs text-red-500 hover:text-red-700",
+													)}
+												>
+													Delete
+												</button>
+											)}
+										</div>
+									</div>
+									<p className={cn(text.base, "whitespace-pre-wrap")}>
+										{comment.content}
+									</p>
+								</div>
+							))}
+						</div>
+					)}
 				</div>
 			</div>
 		</div>
