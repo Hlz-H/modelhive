@@ -1,5 +1,6 @@
 import type { ModuleDefinition } from "../../core/module-loader";
 import { createUsersModule } from "./users.routes";
+
 // import { user } from "@/server/modules/auth/auth.table";  // unused - kept for reference
 
 // Export public APIs

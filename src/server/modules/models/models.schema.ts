@@ -1,12 +1,26 @@
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod/v4";
-import { categories, models, tags, modelVersions } from "./models.table";
+import { categories, models, modelVersions, tags } from "./models.table";
 
 // ===== Categories =====
 
-export const categoryIdSchema = z.string().min(1).meta({ example: "cat_001" }).describe("Category ID");
-export const categoryNameSchema = z.string().min(1).max(100).meta({ example: "AI Models" }).describe("Category name");
-export const categorySlugSchema = z.string().min(1).max(100).meta({ example: "ai-models" }).describe("Category slug");
+export const categoryIdSchema = z
+	.string()
+	.min(1)
+	.meta({ example: "cat_001" })
+	.describe("Category ID");
+export const categoryNameSchema = z
+	.string()
+	.min(1)
+	.max(100)
+	.meta({ example: "AI Models" })
+	.describe("Category name");
+export const categorySlugSchema = z
+	.string()
+	.min(1)
+	.max(100)
+	.meta({ example: "ai-models" })
+	.describe("Category slug");
 
 export const selectCategorySchema = createSelectSchema(categories, {
 	id: categoryIdSchema,
@@ -34,10 +48,26 @@ export const categoryListResponseSchema = z.object({
 
 // ===== Models =====
 
-export const modelIdSchema = z.string().min(1).meta({ example: "mdl_001" }).describe("Model ID");
-export const modelNameSchema = z.string().min(1).max(200).meta({ example: "GPT-4o" }).describe("Model name");
-export const modelSlugSchema = z.string().min(1).max(200).meta({ example: "gpt-4o" }).describe("Model slug");
-export const modelTypeSchema = z.enum(["ai-model", "3d-model", "design", "other"]).describe("Model type");
+export const modelIdSchema = z
+	.string()
+	.min(1)
+	.meta({ example: "mdl_001" })
+	.describe("Model ID");
+export const modelNameSchema = z
+	.string()
+	.min(1)
+	.max(200)
+	.meta({ example: "GPT-4o" })
+	.describe("Model name");
+export const modelSlugSchema = z
+	.string()
+	.min(1)
+	.max(200)
+	.meta({ example: "gpt-4o" })
+	.describe("Model slug");
+export const modelTypeSchema = z
+	.enum(["ai-model", "3d-model", "design", "other"])
+	.describe("Model type");
 
 export const selectModelSchema = createSelectSchema(models, {
 	id: modelIdSchema,
@@ -72,8 +102,18 @@ export const modelListResponseSchema = z.object({
 
 // ===== Tags =====
 
-export const tagNameSchema = z.string().min(1).max(50).meta({ example: "text-generation" }).describe("Tag name");
-export const tagSlugSchema = z.string().min(1).max(50).meta({ example: "text-generation" }).describe("Tag slug");
+export const tagNameSchema = z
+	.string()
+	.min(1)
+	.max(50)
+	.meta({ example: "text-generation" })
+	.describe("Tag name");
+export const tagSlugSchema = z
+	.string()
+	.min(1)
+	.max(50)
+	.meta({ example: "text-generation" })
+	.describe("Tag slug");
 
 export const selectTagSchema = createSelectSchema(tags, {
 	id: z.string(),
@@ -91,7 +131,10 @@ export const tagListResponseSchema = z.object({
 
 // ===== Model Versions =====
 
-export const versionSchema = z.string().meta({ example: "1.0.0" }).describe("Version string");
+export const versionSchema = z
+	.string()
+	.meta({ example: "1.0.0" })
+	.describe("Version string");
 
 export const selectModelVersionSchema = createSelectSchema(modelVersions, {
 	id: z.string(),

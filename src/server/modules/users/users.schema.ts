@@ -4,7 +4,11 @@ import { user } from "@/server/modules/auth/auth.table";
 
 // ===== User Schemas =====
 
-export const userIdSchema = z.string().min(1).meta({ example: "usr_001" }).describe("User ID");
+export const userIdSchema = z
+	.string()
+	.min(1)
+	.meta({ example: "usr_001" })
+	.describe("User ID");
 
 export const selectUserSchema = createSelectSchema(user, {
 	id: userIdSchema,

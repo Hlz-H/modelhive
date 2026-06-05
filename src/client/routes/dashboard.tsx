@@ -1,7 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
-import { useNavigate } from "@tanstack/react-router";
 import { useSession } from "@client/lib/auth";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { cn, colors, layout, spacing, text } from "@/client/lib/design";
 
 export const Route = createFileRoute("/dashboard")({
@@ -26,7 +25,7 @@ function DashboardPage() {
 	useEffect(() => {
 		// 等待 session 加载完成
 		if (isPending) return;
-		
+
 		if (!session) {
 			navigate({ to: "/login" });
 			return;
@@ -36,7 +35,7 @@ function DashboardPage() {
 			try {
 				const response = await fetch(`/api/users/${session.user.id}/models`);
 				if (response.ok) {
-					const data = await response.json() as { models: Model[] };
+					const data = (await response.json()) as { models: Model[] };
 					setModels(data.models);
 				}
 			} catch (err) {
@@ -75,17 +74,11 @@ function DashboardPage() {
 				<div className="mb-8 flex items-center justify-between">
 					<div>
 						<h1 className={cn(text.h1, colors.text.primary)}>Dashboard</h1>
-						<p className={cn(text.base, colors.text.secondary)}>
-							管理你的模型
-						</p>
+						<p className={cn(text.base, colors.text.secondary)}>管理你的模型</p>
 					</div>
 					<a
 						href="/models/new"
-						className={cn(
-							"px-6 py-3",
-							colors.bg.inverse,
-							colors.text.inverse,
-						)}
+						className={cn("px-6 py-3", colors.bg.inverse, colors.text.inverse)}
 					>
 						创建新模型
 					</a>
@@ -127,7 +120,7 @@ function DashboardPage() {
 									<a
 										href={`/models/${model.id}/edit`}
 										className={cn(
-											"px-4 py-2 border border-gray-200",
+											"border border-gray-200 px-4 py-2",
 											text.small,
 										)}
 									>
@@ -137,7 +130,7 @@ function DashboardPage() {
 										type="button"
 										onClick={() => handleDelete(model.id)}
 										className={cn(
-											"px-4 py-2 border border-red-200 text-red-600",
+											"border border-red-200 px-4 py-2 text-red-600",
 											text.small,
 										)}
 									>

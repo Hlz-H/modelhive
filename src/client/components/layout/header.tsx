@@ -14,6 +14,7 @@ interface HeaderProps {
 export function Header({ navItems = [], children }: HeaderProps) {
 	const defaultNavItems: NavItem[] = [
 		{ path: "/", label: "Home" },
+		{ path: "/profile", label: "Profile" },
 		{ path: "/login", label: "Login" },
 		{ path: "/register", label: "Register" },
 	];

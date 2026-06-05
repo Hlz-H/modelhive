@@ -37,7 +37,10 @@ export const PUBLIC_API_ROUTES = [
 	"/api/tags/*",
 	"/api/models/*/favorites",
 	"/api/files/*",
+	"/api/collections",
+	"/api/collections/*",
 	// User routes (public GET, authenticated PUT)
 	"/api/users/me",
 	"/api/users/*/models",
+	"/api/users/*/collections",
 ] as const;

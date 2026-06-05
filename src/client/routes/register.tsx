@@ -1,7 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
 import { signUp } from "@client/lib/auth";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import { cn, colors, focus, interactive, text } from "@/client/lib/design";
 
 export const Route = createFileRoute("/register")({
@@ -33,7 +32,7 @@ function RegisterPage() {
 			} else {
 				navigate({ to: "/" });
 			}
-		} catch (err) {
+		} catch (_err) {
 			setError("Network error");
 		} finally {
 			setLoading(false);
@@ -71,10 +70,7 @@ function RegisterPage() {
 								value={name}
 								onChange={(e) => setName(e.target.value)}
 								placeholder="Your name"
-								className={cn(
-									"w-full border border-gray-200 px-3 py-2",
-									focus,
-								)}
+								className={cn("w-full border border-gray-200 px-3 py-2", focus)}
 								required
 							/>
 						</div>
@@ -92,10 +88,7 @@ function RegisterPage() {
 								value={email}
 								onChange={(e) => setEmail(e.target.value)}
 								placeholder="your@email.com"
-								className={cn(
-									"w-full border border-gray-200 px-3 py-2",
-									focus,
-								)}
+								className={cn("w-full border border-gray-200 px-3 py-2", focus)}
 								required
 							/>
 						</div>
@@ -113,10 +106,7 @@ function RegisterPage() {
 								value={password}
 								onChange={(e) => setPassword(e.target.value)}
 								placeholder="••••••••"
-								className={cn(
-									"w-full border border-gray-200 px-3 py-2",
-									focus,
-								)}
+								className={cn("w-full border border-gray-200 px-3 py-2", focus)}
 								required
 								minLength={8}
 							/>
@@ -131,7 +121,7 @@ function RegisterPage() {
 								colors.text.inverse,
 								interactive.base,
 								focus,
-								loading && "opacity-50 cursor-not-allowed",
+								loading && "cursor-not-allowed opacity-50",
 							)}
 						>
 							{loading ? "Creating account..." : "Create Account"}

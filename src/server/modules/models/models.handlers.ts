@@ -1,10 +1,24 @@
-import { eq, like, and, desc, count, sql, inArray } from "drizzle-orm";
+import { and, count, desc, eq, inArray, like, sql } from "drizzle-orm";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { StatusCodes } from "http-status-codes";
 import type { BaseContext } from "@/server/lib/worker-types";
-import { models, categories, tags, modelTags, modelVersions, favorites } from "./models.table";
-import type { InsertCategory, InsertModel, UpdateModel, SelectTag, InsertModelVersion, UpdateModelVersion } from "./models.schema";
+import type {
+	InsertCategory,
+	InsertModel,
+	InsertModelVersion,
+	SelectTag,
+	UpdateModel,
+	UpdateModelVersion,
+} from "./models.schema";
+import {
+	categories,
+	favorites,
+	models,
+	modelTags,
+	modelVersions,
+	tags,
+} from "./models.table";
 
 // ===== Category Handlers =====
 
@@ -50,9 +64,21 @@ export const seedCategories = async (c: Context<BaseContext>) => {
 
 	// Default categories
 	const defaultCategories = [
-		{ name: "AI Model", slug: "ai-model", description: "Artificial intelligence and machine learning models" },
-		{ name: "3D Model", slug: "3d-model", description: "3D models and meshes for rendering and games" },
-		{ name: "Design", slug: "design", description: "Design assets, templates, and resources" },
+		{
+			name: "AI Model",
+			slug: "ai-model",
+			description: "Artificial intelligence and machine learning models",
+		},
+		{
+			name: "3D Model",
+			slug: "3d-model",
+			description: "3D models and meshes for rendering and games",
+		},
+		{
+			name: "Design",
+			slug: "design",
+			description: "Design assets, templates, and resources",
+		},
 		{ name: "Other", slug: "other", description: "Other types of models" },
 	];
 
@@ -65,18 +91,18 @@ export const seedCategories = async (c: Context<BaseContext>) => {
 		});
 
 		if (!existing) {
-			const [newCat] = await db
-				.insert(categories)
-				.values(cat)
-				.returning();
+			const [newCat] = await db.insert(categories).values(cat).returning();
 			created.push(newCat);
 		}
 	}
 
-	return c.json({ 
-		message: `Seeded ${created.length} categories`,
-		categories: created,
-	}, StatusCodes.OK);
+	return c.json(
+		{
+			message: `Seeded ${created.length} categories`,
+			categories: created,
+		},
+		StatusCodes.OK,
+	);
 };
 
 // ===== Model Handlers =====
@@ -89,8 +115,8 @@ export const getModels = async (c: Context<BaseContext>) => {
 	const categoryFilter = query.category || "";
 	const tagFilter = query.tag || "";
 	const sort = query.sort || "newest";
-	const page = Math.max(1, parseInt(query.page || "1"));
-	const limit = Math.min(50, Math.max(1, parseInt(query.limit || "20")));
+	const page = Math.max(1, parseInt(query.page || "1", 10));
+	const limit = Math.min(50, Math.max(1, parseInt(query.limit || "20", 10)));
 	const offset = (page - 1) * limit;
 
 	const conditions = [];
@@ -118,7 +144,8 @@ export const getModels = async (c: Context<BaseContext>) => {
 
 	const where = conditions.length > 0 ? and(...conditions) : undefined;
 
-	const orderBy = sort === "popular" ? desc(models.viewCount) : desc(models.createdAt);
+	const orderBy =
+		sort === "popular" ? desc(models.viewCount) : desc(models.createdAt);
 
 	const [modelList, totalResult] = await Promise.all([
 		db
@@ -128,10 +155,7 @@ export const getModels = async (c: Context<BaseContext>) => {
 			.orderBy(orderBy)
 			.limit(limit)
 			.offset(offset),
-		db
-			.select({ total: count() })
-			.from(models)
-			.where(where),
+		db.select({ total: count() }).from(models).where(where),
 	]);
 
 	const total = totalResult[0]?.total || 0;
@@ -400,10 +424,7 @@ export const deleteModel = async (
 
 export const getAllTags = async (c: Context<BaseContext>) => {
 	const db = c.get("db");
-	const allTags = await db
-		.select()
-		.from(tags)
-		.orderBy(tags.name);
+	const allTags = await db.select().from(tags).orderBy(tags.name);
 
 	return c.json({ tags: allTags }, StatusCodes.OK);
 };
@@ -427,10 +448,7 @@ export const createTag = async (
 		});
 	}
 
-	const [newTag] = await db
-		.insert(tags)
-		.values(input.body)
-		.returning();
+	const [newTag] = await db.insert(tags).values(input.body).returning();
 
 	return c.json({ tag: newTag }, StatusCodes.CREATED);
 };
@@ -474,7 +492,10 @@ export const addModelTags = async (
 
 	const tagIds: string[] = [];
 	for (const tagName of input.body.tags) {
-		const slug = tagName.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+		const slug = tagName
+			.toLowerCase()
+			.replace(/\s+/g, "-")
+			.replace(/[^a-z0-9-]/g, "");
 
 		// Find existing tag or create new one
 		let tag = await db.query.tags.findFirst({
@@ -680,7 +701,10 @@ export const createModelVersion = async (
 
 export const updateModelVersion = async (
 	c: Context<BaseContext>,
-	input: { params?: { id: string; versionId: string }; body?: UpdateModelVersion },
+	input: {
+		params?: { id: string; versionId: string };
+		body?: UpdateModelVersion;
+	},
 ) => {
 	const { id: modelId, versionId } = input.params || {};
 	if (!modelId || !versionId || !input.body) {
@@ -717,7 +741,9 @@ export const updateModelVersion = async (
 	const [updatedVersion] = await db
 		.update(modelVersions)
 		.set(input.body)
-		.where(and(eq(modelVersions.id, versionId), eq(modelVersions.modelId, modelId)))
+		.where(
+			and(eq(modelVersions.id, versionId), eq(modelVersions.modelId, modelId)),
+		)
 		.returning();
 
 	if (!updatedVersion) {
@@ -767,7 +793,9 @@ export const deleteModelVersion = async (
 
 	const result = await db
 		.delete(modelVersions)
-		.where(and(eq(modelVersions.id, versionId), eq(modelVersions.modelId, modelId)));
+		.where(
+			and(eq(modelVersions.id, versionId), eq(modelVersions.modelId, modelId)),
+		);
 
 	if (!result) {
 		throw new HTTPException(StatusCodes.NOT_FOUND, {
@@ -794,7 +822,9 @@ export const incrementDownloadCount = async (
 	const [updated] = await db
 		.update(modelVersions)
 		.set({ downloadCount: sql`download_count + 1` })
-		.where(and(eq(modelVersions.id, versionId), eq(modelVersions.modelId, modelId)))
+		.where(
+			and(eq(modelVersions.id, versionId), eq(modelVersions.modelId, modelId)),
+		)
 		.returning();
 
 	if (!updated) {

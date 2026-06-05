@@ -1,6 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
-import { cn, colors, layout, spacing, text, interactive, focus } from "@/client/lib/design";
+import { useEffect, useState } from "react";
+import {
+	cn,
+	colors,
+	focus,
+	interactive,
+	layout,
+	spacing,
+	text,
+} from "@/client/lib/design";
 
 export const Route = createFileRoute("/")({
 	component: HomePage,
@@ -41,7 +49,7 @@ function HomePage() {
 			const url = `/api/models?${params.toString()}`;
 			const response = await fetch(url);
 			if (response.ok) {
-				const data = await response.json() as { models: Model[] };
+				const data = (await response.json()) as { models: Model[] };
 				setModels(data.models);
 			}
 		} catch (err) {
@@ -60,7 +68,7 @@ function HomePage() {
 			try {
 				const response = await fetch("/api/tags");
 				if (response.ok) {
-					const data = await response.json() as { tags: Tag[] };
+					const data = (await response.json()) as { tags: Tag[] };
 					setTags(data.tags);
 				}
 			} catch (err) {
@@ -98,13 +106,16 @@ function HomePage() {
 					</p>
 
 					{/* Search & Sort */}
-					<div className="flex flex-wrap gap-4 mb-4">
+					<div className="mb-4 flex flex-wrap gap-4">
 						<input
 							type="text"
 							value={search}
 							onChange={(e) => setSearch(e.target.value)}
 							placeholder="Search models..."
-							className={cn("flex-1 min-w-[200px] max-w-md border border-gray-200 px-4 py-2", focus)}
+							className={cn(
+								"min-w-[200px] max-w-md flex-1 border border-gray-200 px-4 py-2",
+								focus,
+							)}
 						/>
 						<select
 							value={sort}
@@ -123,7 +134,7 @@ function HomePage() {
 								type="button"
 								onClick={() => setSelectedTag("")}
 								className={cn(
-									"px-3 py-1 text-sm border transition-colors",
+									"border px-3 py-1 text-sm transition-colors",
 									!selectedTag
 										? "border-gray-800 bg-gray-800 text-white"
 										: "border-gray-200 hover:border-gray-400",
@@ -137,7 +148,7 @@ function HomePage() {
 									type="button"
 									onClick={() => setSelectedTag(tag.slug)}
 									className={cn(
-										"px-3 py-1 text-sm border transition-colors",
+										"border px-3 py-1 text-sm transition-colors",
 										selectedTag === tag.slug
 											? "border-gray-800 bg-gray-800 text-white"
 											: "border-gray-200 hover:border-gray-400",
@@ -160,7 +171,10 @@ function HomePage() {
 						</p>
 						<p className={cn(text.base, colors.text.secondary)}>
 							Be the first to{" "}
-							<a href="/dashboard/models/new" className={cn(colors.text.primary, "underline")}>
+							<a
+								href="/dashboard/models/new"
+								className={cn(colors.text.primary, "underline")}
+							>
 								create a model
 							</a>
 						</p>
@@ -171,13 +185,13 @@ function HomePage() {
 							<a
 								key={model.id}
 								href={`/models/${model.slug}`}
-								className="border border-gray-200 p-6 transition-colors hover:border-gray-400 flex flex-col"
+								className="flex flex-col border border-gray-200 p-6 transition-colors hover:border-gray-400"
 							>
 								{model.imageUrl && (
 									<img
 										src={model.imageUrl}
 										alt={model.name}
-										className="mb-4 w-full h-48 object-cover"
+										className="mb-4 h-48 w-full object-cover"
 									/>
 								)}
 								<div className="flex-1">
@@ -193,11 +207,11 @@ function HomePage() {
 									)}
 									{/* Tags */}
 									{model.tags.length > 0 && (
-										<div className="flex flex-wrap gap-1 mb-3">
+										<div className="mb-3 flex flex-wrap gap-1">
 											{model.tags.map((tag) => (
 												<span
 													key={tag.id}
-													className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600"
+													className="bg-gray-100 px-2 py-0.5 text-gray-600 text-xs"
 												>
 													{tag.name}
 												</span>
@@ -206,7 +220,7 @@ function HomePage() {
 									)}
 								</div>
 								{/* Favorite count */}
-								<div className="flex items-center gap-1 mt-2">
+								<div className="mt-2 flex items-center gap-1">
 									<button
 										type="button"
 										onClick={(e) => handleFavorite(e, model.id)}

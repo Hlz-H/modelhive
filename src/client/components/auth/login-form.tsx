@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
 import { signIn } from "@client/lib/auth";
+import { useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import { cn, colors, focus, interactive, text } from "@/client/lib/design";
 
 export function LoginForm() {
@@ -26,7 +26,7 @@ export function LoginForm() {
 			} else {
 				navigate({ to: "/" });
 			}
-		} catch (err) {
+		} catch (_err) {
 			setError("Network error");
 		} finally {
 			setLoading(false);
@@ -36,7 +36,7 @@ export function LoginForm() {
 	const handleOAuthLogin = async (provider: string) => {
 		try {
 			await signIn.social({ provider: provider as "github" | "google" });
-		} catch (err) {
+		} catch (_err) {
 			setError("OAuth login failed");
 		}
 	};
@@ -72,10 +72,7 @@ export function LoginForm() {
 							value={email}
 							onChange={(e) => setEmail(e.target.value)}
 							placeholder="your@email.com"
-							className={cn(
-								"w-full border border-gray-200 px-3 py-2",
-								focus,
-							)}
+							className={cn("w-full border border-gray-200 px-3 py-2", focus)}
 							required
 						/>
 					</div>
@@ -93,10 +90,7 @@ export function LoginForm() {
 							value={password}
 							onChange={(e) => setPassword(e.target.value)}
 							placeholder="••••••••"
-							className={cn(
-								"w-full border border-gray-200 px-3 py-2",
-								focus,
-							)}
+							className={cn("w-full border border-gray-200 px-3 py-2", focus)}
 							required
 						/>
 					</div>
@@ -110,7 +104,7 @@ export function LoginForm() {
 							colors.text.inverse,
 							interactive.base,
 							focus,
-							loading && "opacity-50 cursor-not-allowed",
+							loading && "cursor-not-allowed opacity-50",
 						)}
 					>
 						{loading ? "Signing in..." : "Sign In"}
@@ -119,7 +113,7 @@ export function LoginForm() {
 
 				<div className="relative">
 					<div className="absolute inset-0 flex items-center">
-						<div className="w-full border-t border-gray-200" />
+						<div className="w-full border-gray-200 border-t" />
 					</div>
 					<div className="relative flex justify-center text-sm">
 						<span className="bg-white px-2 text-gray-500">
@@ -134,7 +128,7 @@ export function LoginForm() {
 						type="button"
 						onClick={() => handleOAuthLogin("github")}
 						className={cn(
-							"flex w-full items-center justify-center gap-3 px-4 py-3 border border-gray-200",
+							"flex w-full items-center justify-center gap-3 border border-gray-200 px-4 py-3",
 							interactive.base,
 							focus,
 						)}
@@ -158,7 +152,7 @@ export function LoginForm() {
 						type="button"
 						onClick={() => handleOAuthLogin("google")}
 						className={cn(
-							"flex w-full items-center justify-center gap-3 px-4 py-3 border border-gray-200",
+							"flex w-full items-center justify-center gap-3 border border-gray-200 px-4 py-3",
 							interactive.base,
 							focus,
 						)}

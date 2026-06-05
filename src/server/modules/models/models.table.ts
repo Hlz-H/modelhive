@@ -15,9 +15,7 @@ export const categories = sqliteTable("categories", {
 	name: text("name").notNull().unique(),
 	slug: text("slug").notNull().unique(),
 	description: text("description"),
-	createdAt: text("created_at")
-		.notNull()
-		.default(sql`(CURRENT_TIMESTAMP)`),
+	createdAt: text("created_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
 });
 
 // Models table - generic model entity
@@ -51,12 +49,8 @@ export const models = sqliteTable("models", {
 	// View counter
 	viewCount: integer("view_count").notNull().default(0),
 	// Timestamps
-	createdAt: text("created_at")
-		.notNull()
-		.default(sql`(CURRENT_TIMESTAMP)`),
-	updatedAt: text("updated_at")
-		.notNull()
-		.default(sql`(CURRENT_TIMESTAMP)`),
+	createdAt: text("created_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
+	updatedAt: text("updated_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
 });
 
 // Tags table
@@ -66,9 +60,7 @@ export const tags = sqliteTable("tags", {
 		.$defaultFn(() => generateId()),
 	name: text("name").notNull().unique(),
 	slug: text("slug").notNull().unique(),
-	createdAt: text("created_at")
-		.notNull()
-		.default(sql`(CURRENT_TIMESTAMP)`),
+	createdAt: text("created_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
 });
 
 // Model-Tag junction table
@@ -96,9 +88,7 @@ export const modelVersions = sqliteTable("model_versions", {
 	fileUrl: text("file_url"),
 	changelog: text("changelog"),
 	downloadCount: integer("download_count").notNull().default(0),
-	createdAt: text("created_at")
-		.notNull()
-		.default(sql`(CURRENT_TIMESTAMP)`),
+	createdAt: text("created_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
 });
 
 // Favorites table
@@ -112,7 +102,5 @@ export const favorites = sqliteTable("favorites", {
 	modelId: text("model_id")
 		.notNull()
 		.references(() => models.id, { onDelete: "cascade" }),
-	createdAt: text("created_at")
-		.notNull()
-		.default(sql`(CURRENT_TIMESTAMP)`),
+	createdAt: text("created_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
 });

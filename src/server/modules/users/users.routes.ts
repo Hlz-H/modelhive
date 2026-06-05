@@ -1,25 +1,25 @@
-import { z } from "zod/v4";
 import { StatusCodes } from "http-status-codes";
+import { z } from "zod/v4";
 import { APIBuilder } from "@/server/core/api-builder";
-import { database } from "@/server/middleware/database";
 import { optionalAuth } from "@/server/middleware/auth-guard";
+import { database } from "@/server/middleware/database";
+import { modelListResponseSchema } from "@/server/modules/models/models.schema";
 import {
 	getCurrentUser,
-	updateUserProfile,
-	getUserModels,
 	getUserFavorites,
-	listUsers,
-	updateUserRole,
+	getUserModels,
 	listAllModels,
+	listUsers,
 	moderateModel,
+	updateUserProfile,
+	updateUserRole,
 } from "./users.handlers";
 import {
-	userResponseSchema,
-	userListResponseSchema,
 	updateUserProfileSchema,
 	updateUserRoleSchema,
+	userListResponseSchema,
+	userResponseSchema,
 } from "./users.schema";
-import { modelListResponseSchema } from "@/server/modules/models/models.schema";
 
 export const createUsersModule = () => {
 	const builder = new APIBuilder({
@@ -126,7 +126,9 @@ export const createUsersModule = () => {
 	builder
 		.get("/admin/models", listAllModels)
 		.summary("List all models")
-		.description("Returns a paginated list of all models including unpublished (admin only)")
+		.description(
+			"Returns a paginated list of all models including unpublished (admin only)",
+		)
 		.tags("Admin")
 		.response(StatusCodes.OK, {
 			description: "Models list",

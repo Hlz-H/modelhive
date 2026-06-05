@@ -1,6 +1,15 @@
+import { useSession } from "@client/lib/auth";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
-import { cn, colors, layout, spacing, text, interactive, focus } from "@/client/lib/design";
+import { useEffect, useRef, useState } from "react";
+import {
+	cn,
+	colors,
+	focus,
+	interactive,
+	layout,
+	spacing,
+	text,
+} from "@/client/lib/design";
 
 export const Route = createFileRoute("/models/$slug")({
 	component: ModelDetailPage,
@@ -49,19 +58,73 @@ function ModelDetailPage() {
 				fetch(`/api/models/${slug}/versions`),
 			]);
 			if (modelRes.ok) {
-				const data = await modelRes.json() as { model: Model };
+				const data = (await modelRes.json()) as { model: Model };
 				setModel(data.model);
 			} else {
 				setError("Model not found");
 			}
 			if (versionsRes.ok) {
-				const data = await versionsRes.json() as { versions: ModelVersion[] };
+				const data = (await versionsRes.json()) as { versions: ModelVersion[] };
 				setVersions(data.versions);
 			}
-		} catch (err) {
+		} catch (_err) {
 			setError("Failed to load model");
 		} finally {
 			setLoading(false);
+		}
+	};
+
+	const [showCollectionPicker, setShowCollectionPicker] = useState(false);
+	const [collections, setCollections] = useState<
+		{ id: string; name: string; isPublic: boolean }[]
+	>([]);
+	const { data: session } = useSession();
+	const collectionPickerRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		if (showCollectionPicker && session) {
+			fetch("/api/users/me/collections")
+				.then(
+					(r) =>
+						r.json() as Promise<{
+							collections?: { id: string; name: string; isPublic: boolean }[];
+						}>,
+				)
+				.then((data) => setCollections(data.collections || []))
+				.catch(() => {});
+		}
+	}, [showCollectionPicker, session]);
+
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			if (
+				collectionPickerRef.current &&
+				!collectionPickerRef.current.contains(event.target as Node)
+			) {
+				setShowCollectionPicker(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, []);
+
+	const handleAddToCollection = async (collectionId: string) => {
+		try {
+			const response = await fetch(`/api/collections/${collectionId}/items`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ modelId: model!.id }),
+			});
+			if (response.ok) {
+				setShowCollectionPicker(false);
+			} else {
+				const data = (await response.json()) as {
+					error?: { message?: string };
+				};
+				alert(data.error?.message || "Failed to add to collection");
+			}
+		} catch {
+			alert("Network error");
 		}
 	};
 
@@ -91,7 +154,7 @@ function ModelDetailPage() {
 				method: "POST",
 			});
 			if (response.ok) {
-				const data = await response.json() as { favorited: boolean };
+				const data = (await response.json()) as { favorited: boolean };
 				setModel({
 					...model,
 					favoriteCount: data.favorited
@@ -134,13 +197,13 @@ function ModelDetailPage() {
 					</p>
 				</div>
 
-				<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+				<div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
 					<div className="lg:col-span-2">
 						{model.imageUrl && (
 							<img
 								src={model.imageUrl}
 								alt={model.name}
-								className="w-full mb-6"
+								className="mb-6 w-full"
 							/>
 						)}
 						{model.description && (
@@ -157,7 +220,7 @@ function ModelDetailPage() {
 									{model.tags.map((tag) => (
 										<span
 											key={tag.id}
-											className="px-3 py-1 text-sm bg-gray-100 text-gray-700"
+											className="bg-gray-100 px-3 py-1 text-gray-700 text-sm"
 										>
 											{tag.name}
 										</span>
@@ -192,14 +255,62 @@ function ModelDetailPage() {
 								type="button"
 								onClick={handleFavorite}
 								className={cn(
-									"mt-4 flex w-full items-center justify-center gap-2 px-4 py-3 border border-gray-200",
+									"mt-4 flex w-full items-center justify-center gap-2 border border-gray-200 px-4 py-3",
 									interactive.base,
 									focus,
 								)}
 							>
-								<span>{model.favoriteCount > 0 ? "❤️" : "🤍"}</span>
-								<span>{model.favoriteCount} {model.favoriteCount === 1 ? "Favorite" : "Favorites"}</span>
+								<span> {model.favoriteCount > 0 ? "❤️" : "🤍"}</span>
+								<span>
+									{model.favoriteCount}{" "}
+									{model.favoriteCount === 1 ? "Favorite" : "Favorites"}
+								</span>
 							</button>
+
+							{session && (
+								<div className="relative" ref={collectionPickerRef}>
+									<button
+										type="button"
+										onClick={() =>
+											setShowCollectionPicker(!showCollectionPicker)
+										}
+										className={cn(
+											"mt-4 flex w-full items-center justify-center gap-2 border border-gray-200 px-4 py-3",
+											interactive.base,
+											focus,
+										)}
+									>
+										+ Add to Collection
+									</button>
+
+									{showCollectionPicker && (
+										<div className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto border border-gray-200 bg-white shadow-lg">
+											{collections.length === 0 ? (
+												<div className="p-3 text-center text-gray-500 text-sm">
+													<p className="mb-2">No collections yet</p>
+													<a
+														href="/collections/new"
+														className={cn("underline", colors.text.secondary)}
+													>
+														Create one
+													</a>
+												</div>
+											) : (
+												collections.map((c) => (
+													<button
+														key={c.id}
+														type="button"
+														onClick={() => handleAddToCollection(c.id)}
+														className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50"
+													>
+														{c.name}
+													</button>
+												))
+											)}
+										</div>
+									)}
+								</div>
+							)}
 
 							{model.externalUrl && (
 								<a
@@ -219,19 +330,30 @@ function ModelDetailPage() {
 
 						{/* Versions */}
 						{versions.length > 0 && (
-							<div className="border border-gray-200 p-6 mt-6">
+							<div className="mt-6 border border-gray-200 p-6">
 								<h3 className={cn(text.h3, "mb-4")}>Versions</h3>
 								<div className="space-y-3">
 									{versions.map((v) => (
-										<div key={v.id} className="border-b border-gray-100 pb-3 last:border-b-0 last:pb-0">
-											<div className="flex items-center justify-between mb-1">
-												<span className={cn(text.base, "font-medium")}>v{v.version}</span>
+										<div
+											key={v.id}
+											className="border-gray-100 border-b pb-3 last:border-b-0 last:pb-0"
+										>
+											<div className="mb-1 flex items-center justify-between">
+												<span className={cn(text.base, "font-medium")}>
+													v{v.version}
+												</span>
 												<span className={cn(text.small, colors.text.secondary)}>
 													{v.downloadCount} downloads
 												</span>
 											</div>
 											{v.changelog && (
-												<p className={cn(text.small, colors.text.secondary, "mb-2")}>
+												<p
+													className={cn(
+														text.small,
+														colors.text.secondary,
+														"mb-2",
+													)}
+												>
 													{v.changelog}
 												</p>
 											)}
@@ -242,7 +364,7 @@ function ModelDetailPage() {
 													rel="noopener noreferrer"
 													onClick={() => handleDownload(v.id)}
 													className={cn(
-														"inline-flex items-center gap-1 px-3 py-1 text-sm border border-gray-200",
+														"inline-flex items-center gap-1 border border-gray-200 px-3 py-1 text-sm",
 														interactive.base,
 													)}
 												>

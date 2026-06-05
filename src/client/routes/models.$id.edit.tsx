@@ -1,8 +1,15 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
-import { useNavigate } from "@tanstack/react-router";
 import { useSession } from "@client/lib/auth";
-import { cn, colors, focus, interactive, layout, spacing, text } from "@/client/lib/design";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import {
+	cn,
+	colors,
+	focus,
+	interactive,
+	layout,
+	spacing,
+	text,
+} from "@/client/lib/design";
 
 export const Route = createFileRoute("/models/$id/edit")({
 	component: EditModelPage,
@@ -77,7 +84,7 @@ function EditModelPage() {
 	useEffect(() => {
 		// 等待 session 加载完成
 		if (isPending) return;
-		
+
 		if (!session) {
 			navigate({ to: "/login" });
 			return;
@@ -88,7 +95,7 @@ function EditModelPage() {
 				// Fetch categories
 				const catRes = await fetch("/api/categories");
 				if (catRes.ok) {
-					const catData = await catRes.json() as { categories: Category[] };
+					const catData = (await catRes.json()) as { categories: Category[] };
 					setCategories(catData.categories);
 				}
 
@@ -96,7 +103,7 @@ function EditModelPage() {
 				// First try to get from user's models list
 				const modelsRes = await fetch(`/api/users/${session.user.id}/models`);
 				if (modelsRes.ok) {
-					const modelsData = await modelsRes.json() as { models: Model[] };
+					const modelsData = (await modelsRes.json()) as { models: Model[] };
 					const model = modelsData.models.find((m: Model) => m.id === id);
 					if (model) {
 						setName(model.name);
@@ -119,10 +126,10 @@ function EditModelPage() {
 				// Fetch versions
 				const verRes = await fetch(`/api/models/${id}/versions`);
 				if (verRes.ok) {
-					const verData = await verRes.json() as { versions: ModelVersion[] };
+					const verData = (await verRes.json()) as { versions: ModelVersion[] };
 					setVersions(verData.versions);
 				}
-			} catch (err) {
+			} catch (_err) {
 				setError("Failed to load model");
 			} finally {
 				setLoading(false);
@@ -145,7 +152,7 @@ function EditModelPage() {
 				body: formData,
 			});
 			if (response.ok) {
-				const data = await response.json() as { url: string };
+				const data = (await response.json()) as { url: string };
 				setNewFileUrl(data.url);
 			}
 		} catch (err) {
@@ -168,7 +175,7 @@ function EditModelPage() {
 				}),
 			});
 			if (response.ok) {
-				const data = await response.json() as { version: ModelVersion };
+				const data = (await response.json()) as { version: ModelVersion };
 				setVersions((prev) => [data.version, ...prev]);
 				setNewVersion("");
 				setNewFileUrl("");
@@ -220,7 +227,10 @@ function EditModelPage() {
 			if (response.ok) {
 				// Save tags
 				if (tagsInput.trim()) {
-					const newTags = tagsInput.split(",").map((t) => t.trim()).filter(Boolean);
+					const newTags = tagsInput
+						.split(",")
+						.map((t) => t.trim())
+						.filter(Boolean);
 					if (newTags.length > 0) {
 						await fetch(`/api/models/${id}/tags`, {
 							method: "POST",
@@ -232,10 +242,12 @@ function EditModelPage() {
 
 				window.location.href = "/dashboard";
 			} else {
-				const data = await response.json() as { error?: { message?: string } };
+				const data = (await response.json()) as {
+					error?: { message?: string };
+				};
 				setError(data.error?.message || "Failed to update model");
 			}
-		} catch (err) {
+		} catch (_err) {
 			setError("Network error");
 		} finally {
 			setSaving(false);
@@ -261,9 +273,7 @@ function EditModelPage() {
 			<div className={layout.container}>
 				<div className="mb-8">
 					<h1 className={cn(text.h1, colors.text.primary)}>编辑模型</h1>
-					<p className={cn(text.base, colors.text.secondary)}>
-						修改模型信息
-					</p>
+					<p className={cn(text.base, colors.text.secondary)}>修改模型信息</p>
 				</div>
 
 				{error && (
@@ -273,28 +283,37 @@ function EditModelPage() {
 				)}
 
 				{/* Version Management */}
-				<div className="max-w-2xl mb-8">
+				<div className="mb-8 max-w-2xl">
 					<h2 className={cn(text.h2, colors.text.primary, "mb-4")}>版本管理</h2>
 
 					{/* Existing versions */}
 					{versions.length > 0 && (
-						<div className="space-y-2 mb-6">
+						<div className="mb-6 space-y-2">
 							{versions.map((v) => (
-								<div key={v.id} className="flex items-center justify-between border border-gray-200 p-3">
+								<div
+									key={v.id}
+									className="flex items-center justify-between border border-gray-200 p-3"
+								>
 									<div>
-										<span className={cn(text.base, "font-medium")}>v{v.version}</span>
-										<span className={cn(text.small, colors.text.secondary, "ml-2")}>
+										<span className={cn(text.base, "font-medium")}>
+											v{v.version}
+										</span>
+										<span
+											className={cn(text.small, colors.text.secondary, "ml-2")}
+										>
 											{v.downloadCount} downloads
 										</span>
 										{v.changelog && (
-											<p className={cn(text.small, colors.text.secondary)}>{v.changelog}</p>
+											<p className={cn(text.small, colors.text.secondary)}>
+												{v.changelog}
+											</p>
 										)}
 									</div>
 									<button
 										type="button"
 										onClick={() => handleDeleteVersion(v.id)}
 										className={cn(
-											"px-3 py-1 text-sm border border-red-200 text-red-600",
+											"border border-red-200 px-3 py-1 text-red-600 text-sm",
 											interactive.base,
 										)}
 									>
@@ -306,10 +325,12 @@ function EditModelPage() {
 					)}
 
 					{/* Add new version */}
-					<div className="border border-gray-200 p-4 space-y-3">
+					<div className="space-y-3 border border-gray-200 p-4">
 						<h3 className={cn(text.h3)}>添加新版本</h3>
 						<div>
-							<label className={cn(text.small, colors.text.secondary, "mb-1 block")}>
+							<label
+								className={cn(text.small, colors.text.secondary, "mb-1 block")}
+							>
 								版本号 *
 							</label>
 							<input
@@ -321,7 +342,9 @@ function EditModelPage() {
 							/>
 						</div>
 						<div>
-							<label className={cn(text.small, colors.text.secondary, "mb-1 block")}>
+							<label
+								className={cn(text.small, colors.text.secondary, "mb-1 block")}
+							>
 								文件上传
 							</label>
 							<div className="flex items-center gap-2">
@@ -334,7 +357,7 @@ function EditModelPage() {
 								<label
 									htmlFor="fileUpload"
 									className={cn(
-										"px-3 py-2 text-sm border border-gray-200 cursor-pointer",
+										"cursor-pointer border border-gray-200 px-3 py-2 text-sm",
 										interactive.base,
 									)}
 								>
@@ -348,7 +371,9 @@ function EditModelPage() {
 							</div>
 						</div>
 						<div>
-							<label className={cn(text.small, colors.text.secondary, "mb-1 block")}>
+							<label
+								className={cn(text.small, colors.text.secondary, "mb-1 block")}
+							>
 								更新说明
 							</label>
 							<textarea
@@ -368,7 +393,7 @@ function EditModelPage() {
 								colors.bg.inverse,
 								colors.text.inverse,
 								interactive.base,
-								!newVersion.trim() && "opacity-50 cursor-not-allowed",
+								!newVersion.trim() && "cursor-not-allowed opacity-50",
 							)}
 						>
 							添加版本
@@ -390,10 +415,7 @@ function EditModelPage() {
 							value={name}
 							onChange={(e) => setName(e.target.value)}
 							placeholder="GPT-4o"
-							className={cn(
-								"w-full border border-gray-200 px-3 py-2",
-								focus,
-							)}
+							className={cn("w-full border border-gray-200 px-3 py-2", focus)}
 							required
 						/>
 					</div>
@@ -411,10 +433,7 @@ function EditModelPage() {
 							value={slug}
 							onChange={(e) => setSlug(e.target.value)}
 							placeholder="gpt-4o"
-							className={cn(
-								"w-full border border-gray-200 px-3 py-2",
-								focus,
-							)}
+							className={cn("w-full border border-gray-200 px-3 py-2", focus)}
 							required
 						/>
 					</div>
@@ -432,10 +451,7 @@ function EditModelPage() {
 							onChange={(e) => setDescription(e.target.value)}
 							placeholder="描述你的模型..."
 							rows={4}
-							className={cn(
-								"w-full border border-gray-200 px-3 py-2",
-								focus,
-							)}
+							className={cn("w-full border border-gray-200 px-3 py-2", focus)}
 						/>
 					</div>
 
@@ -450,10 +466,7 @@ function EditModelPage() {
 							id="type"
 							value={type}
 							onChange={(e) => setType(e.target.value)}
-							className={cn(
-								"w-full border border-gray-200 px-3 py-2",
-								focus,
-							)}
+							className={cn("w-full border border-gray-200 px-3 py-2", focus)}
 						>
 							<option value="ai-model">AI Model</option>
 							<option value="3d-model">3D Model</option>
@@ -473,10 +486,7 @@ function EditModelPage() {
 							id="category"
 							value={categoryId}
 							onChange={(e) => setCategoryId(e.target.value)}
-							className={cn(
-								"w-full border border-gray-200 px-3 py-2",
-								focus,
-							)}
+							className={cn("w-full border border-gray-200 px-3 py-2", focus)}
 						>
 							<option value="">无分类</option>
 							{categories.map((cat) => (
@@ -500,10 +510,7 @@ function EditModelPage() {
 							value={imageUrl}
 							onChange={(e) => setImageUrl(e.target.value)}
 							placeholder="https://example.com/image.jpg"
-							className={cn(
-								"w-full border border-gray-200 px-3 py-2",
-								focus,
-							)}
+							className={cn("w-full border border-gray-200 px-3 py-2", focus)}
 						/>
 					</div>
 
@@ -520,10 +527,7 @@ function EditModelPage() {
 							value={fileUrl}
 							onChange={(e) => setFileUrl(e.target.value)}
 							placeholder="https://example.com/model.bin"
-							className={cn(
-								"w-full border border-gray-200 px-3 py-2",
-								focus,
-							)}
+							className={cn("w-full border border-gray-200 px-3 py-2", focus)}
 						/>
 					</div>
 
@@ -540,10 +544,7 @@ function EditModelPage() {
 							value={externalUrl}
 							onChange={(e) => setExternalUrl(e.target.value)}
 							placeholder="https://example.com"
-							className={cn(
-								"w-full border border-gray-200 px-3 py-2",
-								focus,
-							)}
+							className={cn("w-full border border-gray-200 px-3 py-2", focus)}
 						/>
 					</div>
 
@@ -555,11 +556,11 @@ function EditModelPage() {
 							标签
 						</label>
 						{modelTags.length > 0 && (
-							<div className="flex flex-wrap gap-1 mb-2">
+							<div className="mb-2 flex flex-wrap gap-1">
 								{modelTags.map((tag) => (
 									<span
 										key={tag.id}
-										className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600"
+										className="bg-gray-100 px-2 py-0.5 text-gray-600 text-xs"
 									>
 										{tag.name}
 									</span>
@@ -572,10 +573,7 @@ function EditModelPage() {
 							value={tagsInput}
 							onChange={(e) => setTagsInput(e.target.value)}
 							placeholder="text-generation, image-classification (逗号分隔)"
-							className={cn(
-								"w-full border border-gray-200 px-3 py-2",
-								focus,
-							)}
+							className={cn("w-full border border-gray-200 px-3 py-2", focus)}
 						/>
 					</div>
 
@@ -592,10 +590,7 @@ function EditModelPage() {
 							value={version}
 							onChange={(e) => setVersion(e.target.value)}
 							placeholder="1.0.0"
-							className={cn(
-								"w-full border border-gray-200 px-3 py-2",
-								focus,
-							)}
+							className={cn("w-full border border-gray-200 px-3 py-2", focus)}
 						/>
 					</div>
 
@@ -625,7 +620,7 @@ function EditModelPage() {
 								colors.text.inverse,
 								interactive.base,
 								focus,
-								saving && "opacity-50 cursor-not-allowed",
+								saving && "cursor-not-allowed opacity-50",
 							)}
 						>
 							{saving ? "保存中..." : "保存修改"}
@@ -633,7 +628,7 @@ function EditModelPage() {
 						<a
 							href="/dashboard"
 							className={cn(
-								"px-6 py-3 border border-gray-200",
+								"border border-gray-200 px-6 py-3",
 								interactive.base,
 								focus,
 							)}

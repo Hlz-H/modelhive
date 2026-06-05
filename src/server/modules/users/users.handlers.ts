@@ -1,10 +1,10 @@
-import { eq, desc, count, inArray } from "drizzle-orm";
+import { count, desc, eq, inArray } from "drizzle-orm";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { StatusCodes } from "http-status-codes";
 import type { BaseContext } from "@/server/lib/worker-types";
 import { user } from "@/server/modules/auth/auth.table";
-import { models, favorites } from "@/server/modules/models/models.table";
+import { favorites, models } from "@/server/modules/models/models.table";
 import type { UpdateUserProfile, UpdateUserRole } from "./users.schema";
 
 // ===== User Profile Handlers =====
@@ -113,8 +113,8 @@ export const getUserFavorites = async (c: Context<BaseContext>) => {
 export const listUsers = async (c: Context<BaseContext>) => {
 	const db = c.get("db");
 	const query = c.req.query();
-	const page = Math.max(1, parseInt(query.page || "1"));
-	const limit = Math.min(50, Math.max(1, parseInt(query.limit || "20")));
+	const page = Math.max(1, parseInt(query.page || "1", 10));
+	const limit = Math.min(50, Math.max(1, parseInt(query.limit || "20", 10)));
 	const offset = (page - 1) * limit;
 
 	const [userList, totalResult] = await Promise.all([
@@ -180,8 +180,8 @@ export const updateUserRole = async (
 export const listAllModels = async (c: Context<BaseContext>) => {
 	const db = c.get("db");
 	const query = c.req.query();
-	const page = Math.max(1, parseInt(query.page || "1"));
-	const limit = Math.min(50, Math.max(1, parseInt(query.limit || "20")));
+	const page = Math.max(1, parseInt(query.page || "1", 10));
+	const limit = Math.min(50, Math.max(1, parseInt(query.limit || "20", 10)));
 	const offset = (page - 1) * limit;
 
 	const [modelList, totalResult] = await Promise.all([

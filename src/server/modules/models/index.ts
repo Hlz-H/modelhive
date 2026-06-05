@@ -1,10 +1,10 @@
 import type { ModuleDefinition } from "../../core/module-loader";
 import { createModelsModule } from "./models.routes";
-import { categories, models, tags, modelTags, favorites } from "./models.table";
+import { categories, favorites, models, modelTags, tags } from "./models.table";
 
 // Export public APIs
 export * from "./models.schema";
-export { categories, models, tags, modelTags, favorites } from "./models.table";
+export { categories, favorites, models, modelTags, tags } from "./models.table";
 
 const modelsModule: ModuleDefinition = {
 	name: "models",

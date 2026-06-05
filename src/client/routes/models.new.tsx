@@ -1,6 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { cn, colors, focus, interactive, layout, spacing, text } from "@/client/lib/design";
+import {
+	cn,
+	colors,
+	focus,
+	interactive,
+	layout,
+	spacing,
+	text,
+} from "@/client/lib/design";
 
 export const Route = createFileRoute("/models/new")({
 	component: CreateModelPage,
@@ -44,7 +52,10 @@ function CreateModelPage() {
 
 				// Add tags if any
 				if (tagsInput.trim()) {
-					const tags = tagsInput.split(",").map((t) => t.trim()).filter(Boolean);
+					const tags = tagsInput
+						.split(",")
+						.map((t) => t.trim())
+						.filter(Boolean);
 					if (tags.length > 0) {
 						await fetch(`/api/models/${data.model.id}/tags`, {
 							method: "POST",
@@ -60,7 +71,9 @@ function CreateModelPage() {
 					const data = JSON.parse(responseText);
 					setError(data.error?.message || `Error ${response.status}`);
 				} catch {
-					setError(`Error ${response.status}: ${responseText.substring(0, 100)}`);
+					setError(
+						`Error ${response.status}: ${responseText.substring(0, 100)}`,
+					);
 				}
 			}
 		} catch (err) {
@@ -86,7 +99,11 @@ function CreateModelPage() {
 					</div>
 				)}
 
-				<form onSubmit={handleCreate} action="javascript:void(0)" className="max-w-2xl space-y-6">
+				<form
+					onSubmit={handleCreate}
+					action="javascript:void(0)"
+					className="max-w-2xl space-y-6"
+				>
 					<div>
 						<label
 							htmlFor="name"
@@ -100,10 +117,7 @@ function CreateModelPage() {
 							value={name}
 							onChange={(e) => setName(e.target.value)}
 							placeholder="GPT-4o"
-							className={cn(
-								"w-full border border-gray-200 px-3 py-2",
-								focus,
-							)}
+							className={cn("w-full border border-gray-200 px-3 py-2", focus)}
 							required
 						/>
 					</div>
@@ -121,10 +135,7 @@ function CreateModelPage() {
 							value={slug}
 							onChange={(e) => setSlug(e.target.value)}
 							placeholder="gpt-4o"
-							className={cn(
-								"w-full border border-gray-200 px-3 py-2",
-								focus,
-							)}
+							className={cn("w-full border border-gray-200 px-3 py-2", focus)}
 							required
 						/>
 					</div>
@@ -142,10 +153,7 @@ function CreateModelPage() {
 							onChange={(e) => setDescription(e.target.value)}
 							placeholder="Describe your model..."
 							rows={4}
-							className={cn(
-								"w-full border border-gray-200 px-3 py-2",
-								focus,
-							)}
+							className={cn("w-full border border-gray-200 px-3 py-2", focus)}
 						/>
 					</div>
 
@@ -160,10 +168,7 @@ function CreateModelPage() {
 							id="type"
 							value={type}
 							onChange={(e) => setType(e.target.value)}
-							className={cn(
-								"w-full border border-gray-200 px-3 py-2",
-								focus,
-							)}
+							className={cn("w-full border border-gray-200 px-3 py-2", focus)}
 						>
 							<option value="ai-model">AI Model</option>
 							<option value="3d-model">3D Model</option>
@@ -185,10 +190,7 @@ function CreateModelPage() {
 							value={imageUrl}
 							onChange={(e) => setImageUrl(e.target.value)}
 							placeholder="https://example.com/image.jpg"
-							className={cn(
-								"w-full border border-gray-200 px-3 py-2",
-								focus,
-							)}
+							className={cn("w-full border border-gray-200 px-3 py-2", focus)}
 						/>
 					</div>
 
@@ -205,10 +207,7 @@ function CreateModelPage() {
 							value={tagsInput}
 							onChange={(e) => setTagsInput(e.target.value)}
 							placeholder="text-generation, image-classification (comma separated)"
-							className={cn(
-								"w-full border border-gray-200 px-3 py-2",
-								focus,
-							)}
+							className={cn("w-full border border-gray-200 px-3 py-2", focus)}
 						/>
 					</div>
 
@@ -225,10 +224,7 @@ function CreateModelPage() {
 							value={externalUrl}
 							onChange={(e) => setExternalUrl(e.target.value)}
 							placeholder="https://example.com"
-							className={cn(
-								"w-full border border-gray-200 px-3 py-2",
-								focus,
-							)}
+							className={cn("w-full border border-gray-200 px-3 py-2", focus)}
 						/>
 					</div>
 
@@ -241,7 +237,7 @@ function CreateModelPage() {
 							colors.text.inverse,
 							interactive.base,
 							focus,
-							loading && "opacity-50 cursor-not-allowed",
+							loading && "cursor-not-allowed opacity-50",
 						)}
 					>
 						{loading ? "Creating..." : "Create Model"}

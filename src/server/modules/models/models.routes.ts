@@ -1,45 +1,45 @@
-import { z } from "zod/v4";
 import { StatusCodes } from "http-status-codes";
+import { z } from "zod/v4";
 import { APIBuilder } from "@/server/core/api-builder";
-import { database } from "@/server/middleware/database";
 import { optionalAuth } from "@/server/middleware/auth-guard";
+import { database } from "@/server/middleware/database";
 import {
-	getAllCategories,
-	createCategory,
-	seedCategories,
-	getModels,
-	getModelBySlug,
-	createModel,
-	updateModel,
-	deleteModel,
-	getAllTags,
-	createTag,
 	addModelTags,
-	removeModelTag,
-	getModelVersions,
+	createCategory,
+	createModel,
 	createModelVersion,
-	updateModelVersion,
+	createTag,
+	deleteModel,
 	deleteModelVersion,
+	getAllCategories,
+	getAllTags,
+	getModelBySlug,
+	getModelFavorites,
+	getModels,
+	getModelVersions,
 	incrementDownloadCount,
-	uploadFile,
+	removeModelTag,
+	seedCategories,
 	serveFile,
 	toggleFavorite,
-	getModelFavorites,
+	updateModel,
+	updateModelVersion,
+	uploadFile,
 } from "./models.handlers";
 import {
+	categoryListResponseSchema,
+	insertCategorySchema,
 	insertModelSchema,
+	insertModelVersionSchema,
 	modelIdSchema,
 	modelListResponseSchema,
 	modelResponseSchema,
-	updateModelSchema,
-	categoryListResponseSchema,
-	insertCategorySchema,
 	tagListResponseSchema,
 	tagResponseSchema,
+	updateModelSchema,
+	updateModelVersionSchema,
 	versionListResponseSchema,
 	versionResponseSchema,
-	insertModelVersionSchema,
-	updateModelVersionSchema,
 } from "./models.schema";
 
 export const createModelsModule = () => {
@@ -90,7 +90,9 @@ export const createModelsModule = () => {
 	builder
 		.get("/models", getModels)
 		.summary("List models")
-		.description("Retrieves a paginated list of published models with search and filter support")
+		.description(
+			"Retrieves a paginated list of published models with search and filter support",
+		)
 		.tags("Models")
 		.response(StatusCodes.OK, {
 			description: "Models retrieved successfully",
