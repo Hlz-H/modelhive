@@ -7,6 +7,7 @@ import {
 	getCurrentUser,
 	updateUserProfile,
 	getUserModels,
+	getUserFavorites,
 	listUsers,
 	updateUserRole,
 	listAllModels,
@@ -69,6 +70,21 @@ export const createUsersModule = () => {
 		})
 		.response(StatusCodes.NOT_FOUND, {
 			description: "User not found",
+		});
+
+	// Get current user's favorites (authenticated)
+	builder
+		.get("/users/me/favorites", getUserFavorites)
+		.summary("Get user's favorites")
+		.description("Returns all models favorited by the current user")
+		.tags("Users", "Favorites")
+		.security([{ bearerAuth: [] }])
+		.response(StatusCodes.OK, {
+			description: "User's favorited models",
+			schema: modelListResponseSchema,
+		})
+		.response(StatusCodes.UNAUTHORIZED, {
+			description: "Not authenticated",
 		});
 
 	// ===== Admin Routes =====

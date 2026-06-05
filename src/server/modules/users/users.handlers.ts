@@ -1,10 +1,10 @@
-import { eq, desc, count } from "drizzle-orm";
+import { eq, desc, count, inArray } from "drizzle-orm";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { StatusCodes } from "http-status-codes";
 import type { BaseContext } from "@/server/lib/worker-types";
 import { user } from "@/server/modules/auth/auth.table";
-import { models } from "@/server/modules/models/models.table";
+import { models, favorites } from "@/server/modules/models/models.table";
 import type { UpdateUserProfile, UpdateUserRole } from "./users.schema";
 
 // ===== User Profile Handlers =====
@@ -71,6 +71,39 @@ export const getUserModels = async (
 		.from(models)
 		.where(eq(models.userId, userId))
 		.orderBy(desc(models.createdAt));
+
+	return c.json({ models: userModels }, StatusCodes.OK);
+};
+
+export const getUserFavorites = async (c: Context<BaseContext>) => {
+	const db = c.get("db");
+	const currentUser = c.get("user");
+
+	if (!currentUser) {
+		throw new HTTPException(StatusCodes.UNAUTHORIZED, {
+			message: "Not authenticated",
+		});
+	}
+
+	// Get all model IDs the user has favorited
+	const userFavorites = await db
+		.select({
+			modelId: favorites.modelId,
+		})
+		.from(favorites)
+		.where(eq(favorites.userId, currentUser.id))
+		.orderBy(desc(favorites.createdAt));
+
+	if (userFavorites.length === 0) {
+		return c.json({ models: [] }, StatusCodes.OK);
+	}
+
+	const modelIds = userFavorites.map((f) => f.modelId);
+
+	const userModels = await db
+		.select()
+		.from(models)
+		.where(inArray(models.id, modelIds));
 
 	return c.json({ models: userModels }, StatusCodes.OK);
 };

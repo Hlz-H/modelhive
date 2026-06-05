@@ -1,3 +1,4 @@
+import { z } from "zod/v4";
 import { StatusCodes } from "http-status-codes";
 import { APIBuilder } from "@/server/core/api-builder";
 import { database } from "@/server/middleware/database";
@@ -11,6 +12,12 @@ import {
 	createModel,
 	updateModel,
 	deleteModel,
+	getAllTags,
+	createTag,
+	addModelTags,
+	removeModelTag,
+	toggleFavorite,
+	getModelFavorites,
 } from "./models.handlers";
 import {
 	insertModelSchema,
@@ -20,6 +27,8 @@ import {
 	updateModelSchema,
 	categoryListResponseSchema,
 	insertCategorySchema,
+	tagListResponseSchema,
+	tagResponseSchema,
 } from "./models.schema";
 
 export const createModelsModule = () => {
@@ -145,6 +154,94 @@ export const createModelsModule = () => {
 		})
 		.response(StatusCodes.FORBIDDEN, {
 			description: "Not authorized to delete this model",
+		});
+
+	// ===== Tags =====
+
+	// List all tags (public)
+	builder
+		.get("/tags", getAllTags)
+		.summary("List all tags")
+		.description("Retrieves a list of all tags")
+		.tags("Tags")
+		.response(StatusCodes.OK, {
+			description: "Tags retrieved successfully",
+			schema: tagListResponseSchema,
+		});
+
+	// Create tag (admin)
+	builder
+		.post("/tags", createTag)
+		.summary("Create tag")
+		.description("Creates a new tag (admin only)")
+		.tags("Tags")
+		.security([{ bearerAuth: [] }])
+		.body(z.object({ name: z.string(), slug: z.string() }))
+		.response(StatusCodes.CREATED, {
+			description: "Tag created successfully",
+			schema: tagResponseSchema,
+		})
+		.response(StatusCodes.FORBIDDEN, {
+			description: "Admin access required",
+		});
+
+	// Add tags to model (owner/admin)
+	builder
+		.post("/models/:id/tags", addModelTags)
+		.summary("Add tags to model")
+		.description("Adds tags to a model by tag name (owner or admin only)")
+		.tags("Tags")
+		.security([{ bearerAuth: [] }])
+		.params({ id: modelIdSchema })
+		.body(z.object({ tags: z.array(z.string()) }))
+		.response(StatusCodes.CREATED, {
+			description: "Tags added successfully",
+		})
+		.response(StatusCodes.FORBIDDEN, {
+			description: "Not authorized",
+		});
+
+	// Remove tag from model (owner/admin)
+	builder
+		.delete("/models/:id/tags/:tagId", removeModelTag)
+		.summary("Remove tag from model")
+		.description("Removes a tag from a model (owner or admin only)")
+		.tags("Tags")
+		.security([{ bearerAuth: [] }])
+		.params({ id: modelIdSchema, tagId: z.string() })
+		.response(StatusCodes.NO_CONTENT, {
+			description: "Tag removed successfully",
+		})
+		.response(StatusCodes.FORBIDDEN, {
+			description: "Not authorized",
+		});
+
+	// ===== Favorites =====
+
+	// Toggle favorite (authenticated)
+	builder
+		.post("/models/:id/favorite", toggleFavorite)
+		.summary("Toggle favorite")
+		.description("Toggles the favorite status for a model (authenticated)")
+		.tags("Favorites")
+		.security([{ bearerAuth: [] }])
+		.params({ id: modelIdSchema })
+		.response(StatusCodes.OK, {
+			description: "Favorite toggled",
+		})
+		.response(StatusCodes.UNAUTHORIZED, {
+			description: "Not authenticated",
+		});
+
+	// Get favorite count (public)
+	builder
+		.get("/models/:id/favorites", getModelFavorites)
+		.summary("Get favorite count")
+		.description("Returns the number of favorites for a model")
+		.tags("Favorites")
+		.params({ id: modelIdSchema })
+		.response(StatusCodes.OK, {
+			description: "Favorite count retrieved",
 		});
 
 	return builder;

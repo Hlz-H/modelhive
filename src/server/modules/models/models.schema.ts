@@ -1,6 +1,6 @@
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod/v4";
-import { categories, models } from "./models.table";
+import { categories, models, tags } from "./models.table";
 
 // ===== Categories =====
 
@@ -70,6 +70,43 @@ export const modelListResponseSchema = z.object({
 	total: z.number().int().optional(),
 });
 
+// ===== Tags =====
+
+export const tagNameSchema = z.string().min(1).max(50).meta({ example: "text-generation" }).describe("Tag name");
+export const tagSlugSchema = z.string().min(1).max(50).meta({ example: "text-generation" }).describe("Tag slug");
+
+export const selectTagSchema = createSelectSchema(tags, {
+	id: z.string(),
+	name: tagNameSchema,
+	slug: tagSlugSchema,
+});
+
+export const tagResponseSchema = z.object({
+	tag: selectTagSchema,
+});
+
+export const tagListResponseSchema = z.object({
+	tags: z.array(selectTagSchema),
+});
+
+// Extended model response with tags and favorite count
+export const modelWithDetailsSchema = selectModelSchema.extend({
+	favoriteCount: z.number().int().default(0),
+	tags: z.array(selectTagSchema).default([]),
+});
+
+export const modelWithDetailsResponseSchema = z.object({
+	model: modelWithDetailsSchema,
+});
+
+export const modelListWithDetailsResponseSchema = z.object({
+	models: z.array(modelWithDetailsSchema),
+	total: z.number().int().optional(),
+	page: z.number().int().optional(),
+	limit: z.number().int().optional(),
+	totalPages: z.number().int().optional(),
+});
+
 // Type exports
 export type SelectCategory = z.infer<typeof selectCategorySchema>;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
@@ -77,3 +114,4 @@ export type UpdateCategory = z.infer<typeof updateCategorySchema>;
 export type SelectModel = z.infer<typeof selectModelSchema>;
 export type InsertModel = z.infer<typeof insertModelSchema>;
 export type UpdateModel = z.infer<typeof updateModelSchema>;
+export type SelectTag = z.infer<typeof selectTagSchema>;

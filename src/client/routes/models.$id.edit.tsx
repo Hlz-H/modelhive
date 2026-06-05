@@ -14,6 +14,12 @@ interface Category {
 	slug: string;
 }
 
+interface Tag {
+	id: string;
+	name: string;
+	slug: string;
+}
+
 interface Model {
 	id: string;
 	name: string;
@@ -26,6 +32,7 @@ interface Model {
 	version: string;
 	categoryId: string | null;
 	isPublished: boolean;
+	tags?: Tag[];
 }
 
 function EditModelPage() {
@@ -48,6 +55,8 @@ function EditModelPage() {
 	const [version, setVersion] = useState("1.0.0");
 	const [categoryId, setCategoryId] = useState("");
 	const [isPublished, setIsPublished] = useState(true);
+	const [modelTags, setModelTags] = useState<Tag[]>([]);
+	const [tagsInput, setTagsInput] = useState("");
 
 	useEffect(() => {
 		// 等待 session 加载完成
@@ -67,8 +76,8 @@ function EditModelPage() {
 					setCategories(catData.categories);
 				}
 
-				// Fetch model by ID (using admin endpoint or user's models)
-				// For now, we'll use the user's models list
+				// Fetch model
+				// First try to get from user's models list
 				const modelsRes = await fetch(`/api/users/${session.user.id}/models`);
 				if (modelsRes.ok) {
 					const modelsData = await modelsRes.json() as { models: Model[] };
@@ -84,6 +93,9 @@ function EditModelPage() {
 						setVersion(model.version || "1.0.0");
 						setCategoryId(model.categoryId || "");
 						setIsPublished(model.isPublished);
+						if (model.tags) {
+							setModelTags(model.tags);
+						}
 					} else {
 						setError("Model not found");
 					}
@@ -123,6 +135,18 @@ function EditModelPage() {
 			});
 
 			if (response.ok) {
+				// Save tags
+				if (tagsInput.trim()) {
+					const newTags = tagsInput.split(",").map((t) => t.trim()).filter(Boolean);
+					if (newTags.length > 0) {
+						await fetch(`/api/models/${id}/tags`, {
+							method: "POST",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({ tags: newTags }),
+						});
+					}
+				}
+
 				window.location.href = "/dashboard";
 			} else {
 				const data = await response.json() as { error?: { message?: string } };
@@ -329,6 +353,38 @@ function EditModelPage() {
 							value={externalUrl}
 							onChange={(e) => setExternalUrl(e.target.value)}
 							placeholder="https://example.com"
+							className={cn(
+								"w-full border border-gray-200 px-3 py-2",
+								focus,
+							)}
+						/>
+					</div>
+
+					<div>
+						<label
+							htmlFor="tags"
+							className={cn(text.small, colors.text.secondary, "mb-1 block")}
+						>
+							标签
+						</label>
+						{modelTags.length > 0 && (
+							<div className="flex flex-wrap gap-1 mb-2">
+								{modelTags.map((tag) => (
+									<span
+										key={tag.id}
+										className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600"
+									>
+										{tag.name}
+									</span>
+								))}
+							</div>
+						)}
+						<input
+							id="tags"
+							type="text"
+							value={tagsInput}
+							onChange={(e) => setTagsInput(e.target.value)}
+							placeholder="text-generation, image-classification (逗号分隔)"
 							className={cn(
 								"w-full border border-gray-200 px-3 py-2",
 								focus,

@@ -1,10 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { cn, colors, layout, spacing, text } from "@/client/lib/design";
+import { cn, colors, layout, spacing, text, interactive, focus } from "@/client/lib/design";
 
 export const Route = createFileRoute("/models/$slug")({
 	component: ModelDetailPage,
 });
+
+interface Tag {
+	id: string;
+	name: string;
+	slug: string;
+}
 
 interface Model {
 	id: string;
@@ -16,6 +22,8 @@ interface Model {
 	externalUrl: string | null;
 	version: string;
 	createdAt: string;
+	tags: Tag[];
+	favoriteCount: number;
 }
 
 function ModelDetailPage() {
@@ -24,25 +32,45 @@ function ModelDetailPage() {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState("");
 
-	useEffect(() => {
-		const fetchModel = async () => {
-			try {
-				const response = await fetch(`/api/models/${slug}`);
-				if (response.ok) {
-					const data = await response.json() as { model: Model };
-					setModel(data.model);
-				} else {
-					setError("Model not found");
-				}
-			} catch (err) {
-				setError("Failed to load model");
-			} finally {
-				setLoading(false);
+	const fetchModel = async () => {
+		try {
+			const response = await fetch(`/api/models/${slug}`);
+			if (response.ok) {
+				const data = await response.json() as { model: Model };
+				setModel(data.model);
+			} else {
+				setError("Model not found");
 			}
-		};
+		} catch (err) {
+			setError("Failed to load model");
+		} finally {
+			setLoading(false);
+		}
+	};
 
+	useEffect(() => {
 		fetchModel();
 	}, [slug]);
+
+	const handleFavorite = async () => {
+		if (!model) return;
+		try {
+			const response = await fetch(`/api/models/${model.id}/favorite`, {
+				method: "POST",
+			});
+			if (response.ok) {
+				const data = await response.json() as { favorited: boolean };
+				setModel({
+					...model,
+					favoriteCount: data.favorited
+						? model.favoriteCount + 1
+						: model.favoriteCount - 1,
+				});
+			}
+		} catch (err) {
+			console.error("Failed to toggle favorite:", err);
+		}
+	};
 
 	if (loading) {
 		return (
@@ -88,6 +116,23 @@ function ModelDetailPage() {
 								<p className={text.base}>{model.description}</p>
 							</div>
 						)}
+
+						{/* Tags */}
+						{model.tags.length > 0 && (
+							<div className="mt-6">
+								<h3 className={cn(text.h3, "mb-3")}>Tags</h3>
+								<div className="flex flex-wrap gap-2">
+									{model.tags.map((tag) => (
+										<span
+											key={tag.id}
+											className="px-3 py-1 text-sm bg-gray-100 text-gray-700"
+										>
+											{tag.name}
+										</span>
+									))}
+								</div>
+							</div>
+						)}
 					</div>
 
 					<div>
@@ -110,13 +155,27 @@ function ModelDetailPage() {
 								</div>
 							</dl>
 
+							{/* Favorite button */}
+							<button
+								type="button"
+								onClick={handleFavorite}
+								className={cn(
+									"mt-4 flex w-full items-center justify-center gap-2 px-4 py-3 border border-gray-200",
+									interactive.base,
+									focus,
+								)}
+							>
+								<span>{model.favoriteCount > 0 ? "❤️" : "🤍"}</span>
+								<span>{model.favoriteCount} {model.favoriteCount === 1 ? "Favorite" : "Favorites"}</span>
+							</button>
+
 							{model.externalUrl && (
 								<a
 									href={model.externalUrl}
 									target="_blank"
 									rel="noopener noreferrer"
 									className={cn(
-										"mt-6 flex w-full items-center justify-center px-4 py-3",
+										"mt-4 flex w-full items-center justify-center px-4 py-3",
 										colors.bg.inverse,
 										colors.text.inverse,
 									)}

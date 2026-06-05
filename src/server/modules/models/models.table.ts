@@ -58,3 +58,44 @@ export const models = sqliteTable("models", {
 		.notNull()
 		.default(sql`(CURRENT_TIMESTAMP)`),
 });
+
+// Tags table
+export const tags = sqliteTable("tags", {
+	id: text("id")
+		.primaryKey()
+		.$defaultFn(() => generateId()),
+	name: text("name").notNull().unique(),
+	slug: text("slug").notNull().unique(),
+	createdAt: text("created_at")
+		.notNull()
+		.default(sql`(CURRENT_TIMESTAMP)`),
+});
+
+// Model-Tag junction table
+export const modelTags = sqliteTable("model_tags", {
+	id: text("id")
+		.primaryKey()
+		.$defaultFn(() => generateId()),
+	modelId: text("model_id")
+		.notNull()
+		.references(() => models.id, { onDelete: "cascade" }),
+	tagId: text("tag_id")
+		.notNull()
+		.references(() => tags.id, { onDelete: "cascade" }),
+});
+
+// Favorites table
+export const favorites = sqliteTable("favorites", {
+	id: text("id")
+		.primaryKey()
+		.$defaultFn(() => generateId()),
+	userId: text("user_id")
+		.notNull()
+		.references(() => user.id),
+	modelId: text("model_id")
+		.notNull()
+		.references(() => models.id, { onDelete: "cascade" }),
+	createdAt: text("created_at")
+		.notNull()
+		.default(sql`(CURRENT_TIMESTAMP)`),
+});

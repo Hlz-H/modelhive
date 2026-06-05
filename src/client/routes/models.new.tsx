@@ -13,6 +13,7 @@ function CreateModelPage() {
 	const [type, setType] = useState("ai-model");
 	const [imageUrl, setImageUrl] = useState("");
 	const [externalUrl, setExternalUrl] = useState("");
+	const [tagsInput, setTagsInput] = useState("");
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
 
@@ -20,8 +21,6 @@ function CreateModelPage() {
 		e.preventDefault();
 		setLoading(true);
 		setError("");
-
-		console.log("Creating model...", { name, slug, type });
 
 		try {
 			const response = await fetch("/api/models", {
@@ -37,16 +36,25 @@ function CreateModelPage() {
 				}),
 			});
 
-			console.log("Response status:", response.status);
-			console.log("Response headers:", Object.fromEntries(response.headers.entries()));
-
 			const responseText = await response.text();
-			console.log("Response body:", responseText);
 
 			if (response.ok) {
 				const data = JSON.parse(responseText);
-				console.log("Success! Redirecting to:", `/models/${data.model.slug}`);
-				window.location.href = `/models/${data.model.slug}`;
+				const modelId = data.model.slug;
+
+				// Add tags if any
+				if (tagsInput.trim()) {
+					const tags = tagsInput.split(",").map((t) => t.trim()).filter(Boolean);
+					if (tags.length > 0) {
+						await fetch(`/api/models/${data.model.id}/tags`, {
+							method: "POST",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({ tags }),
+						});
+					}
+				}
+
+				window.location.href = `/models/${modelId}`;
 			} else {
 				try {
 					const data = JSON.parse(responseText);
@@ -56,7 +64,6 @@ function CreateModelPage() {
 				}
 			}
 		} catch (err) {
-			console.error("Fetch error:", err);
 			setError(`Network error: ${err}`);
 		} finally {
 			setLoading(false);
@@ -178,6 +185,26 @@ function CreateModelPage() {
 							value={imageUrl}
 							onChange={(e) => setImageUrl(e.target.value)}
 							placeholder="https://example.com/image.jpg"
+							className={cn(
+								"w-full border border-gray-200 px-3 py-2",
+								focus,
+							)}
+						/>
+					</div>
+
+					<div>
+						<label
+							htmlFor="tags"
+							className={cn(text.small, colors.text.secondary, "mb-1 block")}
+						>
+							Tags
+						</label>
+						<input
+							id="tags"
+							type="text"
+							value={tagsInput}
+							onChange={(e) => setTagsInput(e.target.value)}
+							placeholder="text-generation, image-classification (comma separated)"
 							className={cn(
 								"w-full border border-gray-200 px-3 py-2",
 								focus,
