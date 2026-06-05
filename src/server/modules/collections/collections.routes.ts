@@ -4,15 +4,16 @@ import { APIBuilder } from "@/server/core/api-builder";
 import { optionalAuth } from "@/server/middleware/auth-guard";
 import { database } from "@/server/middleware/database";
 import {
-	addCollectionItem,
-	createCollection,
-	deleteCollection,
-	getCollectionById,
 	getCollections,
-	getMyCollections,
-	getUserCollections,
-	removeCollectionItem,
+	getCollectionById,
+	createCollection,
 	updateCollection,
+	deleteCollection,
+	getUserCollections,
+	getMyCollections,
+	addCollectionItem,
+	reorderCollectionItems,
+	removeCollectionItem,
 } from "./collections.handlers";
 import {
 	collectionListResponseSchema,
@@ -135,6 +136,28 @@ export const createCollectionsModule = () => {
 		.body(z.object({ modelId: z.string(), note: z.string().optional() }))
 		.response(StatusCodes.CREATED, {
 			description: "Item added",
+		})
+		.response(StatusCodes.FORBIDDEN, {
+			description: "Not authorized",
+		});
+
+	// Reorder items
+	builder
+		.put("/collections/:id/items/reorder", reorderCollectionItems)
+		.summary("Reorder collection items")
+		.description("Updates the positions of items in a collection (owner only)")
+		.tags("Collections")
+		.security([{ bearerAuth: [] }])
+		.params({ id: z.string() })
+		.body(
+			z.object({
+				items: z.array(
+					z.object({ id: z.string(), position: z.number() }),
+				),
+			}),
+		)
+		.response(StatusCodes.OK, {
+			description: "Items reordered",
 		})
 		.response(StatusCodes.FORBIDDEN, {
 			description: "Not authorized",

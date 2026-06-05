@@ -1,4 +1,4 @@
-import { and, count, desc, eq, like } from "drizzle-orm";
+import { and, asc, count, desc, eq, like, sql } from "drizzle-orm";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { StatusCodes } from "http-status-codes";
@@ -93,7 +93,7 @@ export const getCollectionById = async (
 		.select()
 		.from(collectionItems)
 		.where(eq(collectionItems.collectionId, collectionId))
-		.orderBy(desc(collectionItems.createdAt));
+		.orderBy(asc(collectionItems.position));
 
 	return c.json({ collection, items }, StatusCodes.OK);
 };
@@ -227,16 +227,57 @@ export const addCollectionItem = async (
 	const db = c.get("db");
 	await checkCollectionOwner(c, collectionId);
 
+	// Get max position
+	const [maxResult] = await db
+		.select({ max: sql<number>`COALESCE(MAX(position), -1) + 1` })
+		.from(collectionItems)
+		.where(eq(collectionItems.collectionId, collectionId));
+	const nextPosition = maxResult?.max ?? 0;
+
 	const [item] = await db
 		.insert(collectionItems)
 		.values({
 			collectionId,
 			modelId: input.body.modelId,
 			note: input.body.note,
+			position: nextPosition,
 		})
 		.returning();
 
 	return c.json({ item }, StatusCodes.CREATED);
+};
+
+export const reorderCollectionItems = async (
+	c: Context<BaseContext>,
+	input: {
+		params?: { id: string };
+		body?: { items: { id: string; position: number }[] };
+	},
+) => {
+	const collectionId = input.params?.id;
+	if (!collectionId || !input.body?.items) {
+		throw new HTTPException(StatusCodes.BAD_REQUEST, {
+			message: "Collection ID and items array are required",
+		});
+	}
+
+	const db = c.get("db");
+	await checkCollectionOwner(c, collectionId);
+
+	// Update positions in bulk
+	for (const item of input.body.items) {
+		await db
+			.update(collectionItems)
+			.set({ position: item.position })
+			.where(
+				and(
+					eq(collectionItems.id, item.id),
+					eq(collectionItems.collectionId, collectionId),
+				),
+			);
+	}
+
+	return c.json({ success: true }, StatusCodes.OK);
 };
 
 export const removeCollectionItem = async (

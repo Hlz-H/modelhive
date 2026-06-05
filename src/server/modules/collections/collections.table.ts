@@ -32,5 +32,6 @@ export const collectionItems = sqliteTable("collection_items", {
 		.notNull()
 		.references(() => models.id, { onDelete: "cascade" }),
 	note: text("note"),
+	position: integer("position").notNull().default(0),
 	createdAt: text("created_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
 });

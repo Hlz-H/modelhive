@@ -18,6 +18,7 @@ interface ModelItem {
 	id: string;
 	modelId: string;
 	note: string | null;
+	position: number;
 	createdAt: string;
 }
 
@@ -96,6 +97,32 @@ function CollectionDetailPage() {
 		} catch {}
 	};
 
+	const handleMoveItem = async (index: number, direction: "up" | "down") => {
+		const newIndex = direction === "up" ? index - 1 : index + 1;
+		if (newIndex < 0 || newIndex >= items.length) return;
+
+		const updated = [...items];
+		[updated[index], updated[newIndex]] = [updated[newIndex], updated[index]];
+		updated[index] = { ...updated[index], position: index };
+		updated[newIndex] = { ...updated[newIndex], position: newIndex };
+
+		setItems(updated);
+
+		// Send reorder to backend
+		try {
+			await fetch(`/api/collections/${id}/items/reorder`, {
+				method: "PUT",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					items: updated.map((item, i) => ({
+						id: item.id,
+						position: i,
+					})),
+				}),
+			});
+		} catch {}
+	};
+
 	if (loading) {
 		return (
 			<div className={spacing.page}>
@@ -145,7 +172,7 @@ function CollectionDetailPage() {
 					</div>
 				) : (
 					<div className="space-y-3">
-						{items.map((item) => {
+						{items.map((item, index) => {
 							const model = models[item.modelId];
 							if (!model) return null;
 							return (
@@ -153,31 +180,62 @@ function CollectionDetailPage() {
 									key={item.id}
 									className="flex items-center justify-between border border-gray-200 p-4"
 								>
-									<a
-										href={`/models/${model.slug}`}
-										className="flex flex-1 items-center gap-4"
-									>
-										{model.imageUrl && (
-											<img
-												src={model.imageUrl}
-												alt={model.name}
-												className="h-12 w-12 object-cover"
-											/>
+									<div className="flex items-center gap-2">
+										{isOwner && items.length > 1 && (
+											<div className="flex flex-col gap-1">
+												<button
+													type="button"
+													disabled={index === 0}
+													onClick={() => handleMoveItem(index, "up")}
+													className={cn(
+														"text-xs leading-none px-1 py-0.5 border border-gray-200",
+														index === 0 && "opacity-30 cursor-not-allowed",
+														interactive.base,
+													)}
+												>
+													▲
+												</button>
+												<button
+													type="button"
+													disabled={index === items.length - 1}
+													onClick={() => handleMoveItem(index, "down")}
+													className={cn(
+														"text-xs leading-none px-1 py-0.5 border border-gray-200",
+														index === items.length - 1 &&
+															"opacity-30 cursor-not-allowed",
+														interactive.base,
+													)}
+												>
+													▼
+												</button>
+											</div>
 										)}
-										<div>
-											<h3 className={cn(text.h3, colors.text.primary)}>
-												{model.name}
-											</h3>
-											<p className={cn(text.small, colors.text.secondary)}>
-												{model.type}
-											</p>
-											{item.note && (
-												<p className={cn(text.small, "mt-1 text-gray-500")}>
-													{item.note}
-												</p>
+										<a
+											href={`/models/${model.slug}`}
+											className="flex items-center gap-4"
+										>
+											{model.imageUrl && (
+												<img
+													src={model.imageUrl}
+													alt={model.name}
+													className="h-12 w-12 object-cover"
+												/>
 											)}
-										</div>
-									</a>
+											<div>
+												<h3 className={cn(text.h3, colors.text.primary)}>
+													{model.name}
+												</h3>
+												<p className={cn(text.small, colors.text.secondary)}>
+													{model.type}
+												</p>
+												{item.note && (
+													<p className={cn(text.small, "mt-1 text-gray-500")}>
+														{item.note}
+													</p>
+												)}
+											</div>
+										</a>
+									</div>
 									{isOwner && (
 										<button
 											type="button"
