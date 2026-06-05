@@ -116,6 +116,7 @@ export const importIcosaAsset = async (
 			type: "3d-model",
 			description,
 			imageUrl: data.thumbnailUrl || null,
+			fileUrl: data.gltfUrl || null,
 			externalUrl: `https://icosa.gallery/view/${data.assetId}`,
 			license: data.license || null,
 			userId: user.id,

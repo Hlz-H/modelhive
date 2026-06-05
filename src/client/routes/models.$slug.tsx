@@ -10,6 +10,7 @@ import {
 	spacing,
 	text,
 } from "@/client/lib/design";
+import { ModelViewer } from "@/client/components/model/model-viewer";
 
 export const Route = createFileRoute("/models/$slug")({
 	component: ModelDetailPage,
@@ -45,6 +46,7 @@ interface Model {
 	description: string | null;
 	type: string;
 	imageUrl: string | null;
+	fileUrl: string | null;
 	externalUrl: string | null;
 	version: string;
 	createdAt: string;
@@ -292,13 +294,17 @@ function ModelDetailPage() {
 
 				<div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
 					<div className="lg:col-span-2">
-						{model.imageUrl && (
+						{model.type === "3d-model" && model.fileUrl ? (
+							<div className="mb-6 h-96 w-full border border-gray-200">
+								<ModelViewer gltfUrl={model.fileUrl} className="h-full w-full" />
+							</div>
+						) : model.imageUrl ? (
 							<img
 								src={model.imageUrl}
 								alt={model.name}
 								className="mb-6 w-full"
 							/>
-						)}
+						) : null}
 						{model.description && (
 							<div className="prose">
 								<p className={text.base}>{model.description}</p>

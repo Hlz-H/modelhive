@@ -107,6 +107,7 @@ export const createModelsModule = () => {
 		.summary("Get model by slug")
 		.description("Retrieves a specific model by its slug")
 		.tags("Models")
+		.params({ slug: z.string() })
 		.response(StatusCodes.OK, {
 			description: "Model retrieved successfully",
 			schema: modelResponseSchema,
