@@ -336,6 +336,17 @@ function ModelDetailPage() {
 										{new Date(model.createdAt).toLocaleDateString()}
 									</dd>
 								</div>
+								<div>
+									<dt className={text.small}>Creator</dt>
+									<dd className={text.base}>
+										<a
+											href={`/users/${model.userId}`}
+											className={cn("underline", colors.text.secondary)}
+										>
+											View Profile
+										</a>
+									</dd>
+								</div>
 							</dl>
 
 							{session && session.user.id !== model.userId && (

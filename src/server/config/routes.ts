@@ -41,6 +41,7 @@ export const PUBLIC_API_ROUTES = [
 	"/api/collections/*",
 	// User routes (public GET, authenticated PUT)
 	"/api/users/me",
+	"/api/users/*",
 	"/api/users/*/models",
 	"/api/users/*/collections",
 	"/api/users/*/followers",

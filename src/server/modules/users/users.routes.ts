@@ -8,6 +8,7 @@ import {
 	getCurrentUser,
 	getUserFavorites,
 	getUserModels,
+	getUserProfile,
 	listAllModels,
 	listUsers,
 	moderateModel,
@@ -55,6 +56,20 @@ export const createUsersModule = () => {
 		})
 		.response(StatusCodes.UNAUTHORIZED, {
 			description: "Not authenticated",
+		});
+
+	// Get user's profile (public)
+	builder
+		.get("/users/:id", getUserProfile)
+		.summary("Get user profile")
+		.description("Returns a user's public profile, models, and collections")
+		.tags("Users")
+		.params({ id: z.string() })
+		.response(StatusCodes.OK, {
+			description: "User profile",
+		})
+		.response(StatusCodes.NOT_FOUND, {
+			description: "User not found",
 		});
 
 	// Get user's models (public)

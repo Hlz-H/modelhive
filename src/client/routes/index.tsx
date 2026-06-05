@@ -30,6 +30,7 @@ interface Model {
 	createdAt: string;
 	tags: Tag[];
 	favoriteCount: number;
+	userId: string;
 }
 
 function HomePage() {
@@ -257,10 +258,18 @@ function HomePage() {
 									)}
 									<div className="flex-1">
 										<h3 className={cn(text.h3, "mb-2")}>{model.name}</h3>
-										<p className={cn(text.small, colors.text.secondary, "mb-2")}>
-											{model.type}
-										</p>
-										{model.description && (
+									<p className={cn(text.small, colors.text.secondary, "mb-2")}>
+										{model.type}
+									</p>
+									<p className={cn(text.small, "mb-2")}>
+										<a
+											href={`/users/${model.userId}`}
+											className="text-gray-400 hover:text-gray-600"
+										>
+											by User
+										</a>
+									</p>
+									{model.description && (
 											<p className={cn(text.base, colors.text.secondary, "mb-3")}>
 												{model.description.substring(0, 100)}
 												{model.description.length > 100 ? "..." : ""}

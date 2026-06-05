@@ -1,9 +1,10 @@
-import { count, desc, eq, inArray } from "drizzle-orm";
+import { and, count, desc, eq, inArray } from "drizzle-orm";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { StatusCodes } from "http-status-codes";
 import type { BaseContext } from "@/server/lib/worker-types";
 import { user } from "@/server/modules/auth/auth.table";
+import { collections } from "@/server/modules/collections/collections.table";
 import { favorites, models } from "@/server/modules/models/models.table";
 import type { UpdateUserProfile, UpdateUserRole } from "./users.schema";
 
@@ -19,6 +20,61 @@ export const getCurrentUser = async (c: Context<BaseContext>) => {
 	}
 
 	return c.json({ user: currentUser }, StatusCodes.OK);
+};
+
+export const getUserProfile = async (
+	c: Context<BaseContext>,
+	input: { params?: { id: string } },
+) => {
+	const userId = input.params?.id;
+	if (!userId) {
+		throw new HTTPException(StatusCodes.BAD_REQUEST, {
+			message: "User ID is required",
+		});
+	}
+
+	const db = c.get("db");
+
+	const profile = await db.query.user.findFirst({
+		where: eq(user.id, userId),
+	});
+
+	if (!profile) {
+		throw new HTTPException(StatusCodes.NOT_FOUND, {
+			message: "User not found",
+		});
+	}
+
+	// Get user's published models
+	const userModels = await db
+		.select()
+		.from(models)
+		.where(
+			and(eq(models.userId, userId), eq(models.isPublished, true)),
+		)
+		.orderBy(desc(models.createdAt));
+
+	// Get user's public collections with item counts
+	const userCollections = await db
+		.select()
+		.from(collections)
+		.where(
+			and(eq(collections.userId, userId), eq(collections.isPublic, true)),
+		)
+		.orderBy(desc(collections.createdAt));
+
+	return c.json(
+		{
+			user: {
+				id: profile.id,
+				name: profile.name,
+				image: profile.image,
+			},
+			models: userModels,
+			collections: userCollections,
+		},
+		StatusCodes.OK,
+	);
 };
 
 export const updateUserProfile = async (
