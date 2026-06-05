@@ -3,6 +3,7 @@ import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { StatusCodes } from "http-status-codes";
 import type { BaseContext } from "@/server/lib/worker-types";
+import { user } from "@/server/modules/auth/auth.table";
 import type {
 	InsertCategory,
 	InsertModel,
@@ -204,10 +205,22 @@ export const getModels = async (c: Context<BaseContext>) => {
 			favCountMap[row.modelId] = row.count;
 		}
 
+		// Fetch creator names
+		const creatorIds = [...new Set(modelList.map((m) => m.userId))];
+		const creatorRows = await db
+			.select({ id: user.id, name: user.name })
+			.from(user)
+			.where(inArray(user.id, creatorIds));
+		const creatorMap: Record<string, string> = {};
+		for (const row of creatorRows) {
+			creatorMap[row.id] = row.name;
+		}
+
 		const enrichedModels = modelList.map((m) => ({
 			...m,
 			tags: modelTagsMap[m.id] || [],
 			favoriteCount: favCountMap[m.id] || 0,
+			creatorName: creatorMap[m.userId] || "Unknown",
 		}));
 
 		return c.json(
@@ -222,10 +235,15 @@ export const getModels = async (c: Context<BaseContext>) => {
 		);
 	}
 
-	return c.json(
-		{
-			models: modelList.map((m) => ({ ...m, tags: [], favoriteCount: 0 })),
-			total,
+		return c.json(
+			{
+				models: modelList.map((m) => ({
+					...m,
+					tags: [],
+					favoriteCount: 0,
+					creatorName: "Unknown",
+				})),
+				total,
 			page,
 			limit,
 			totalPages: Math.ceil(total / limit),
@@ -281,12 +299,18 @@ export const getModelBySlug = async (
 		.from(favorites)
 		.where(eq(favorites.modelId, model.id));
 
+	// Fetch creator name
+	const creator = await db.query.user.findFirst({
+		where: eq(user.id, model.userId),
+	});
+
 	return c.json(
 		{
 			model: {
 				...model,
 				tags: modelTagRows,
 				favoriteCount: favResult?.count || 0,
+				creatorName: creator?.name || "Unknown",
 			},
 		},
 		StatusCodes.OK,

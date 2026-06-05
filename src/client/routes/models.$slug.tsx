@@ -51,6 +51,7 @@ interface Model {
 	tags: Tag[];
 	favoriteCount: number;
 	userId: string;
+	creatorName: string;
 	rowsCount: number | null;
 	license: string | null;
 	language: string | null;
@@ -378,12 +379,12 @@ function ModelDetailPage() {
 								</div>
 								<div>
 									<dt className={text.small}>Creator</dt>
-									<dd className={text.base}>
+										<dd className={cn(text.base, "flex items-center gap-2")}>
 										<a
 											href={`/users/${model.userId}`}
 											className={cn("underline", colors.text.secondary)}
 										>
-											View Profile
+											{model.creatorName || "View Profile"}
 										</a>
 									</dd>
 								</div>

@@ -31,6 +31,7 @@ interface Model {
 	tags: Tag[];
 	favoriteCount: number;
 	userId: string;
+	creatorName: string;
 }
 
 function HomePage() {
@@ -267,7 +268,7 @@ function HomePage() {
 											href={`/users/${model.userId}`}
 											className="text-gray-400 hover:text-gray-600"
 										>
-											by User
+											by {model.creatorName}
 										</a>
 									</p>
 									{model.description && (
