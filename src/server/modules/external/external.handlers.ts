@@ -10,16 +10,13 @@ const ICOSA_BASE = "https://api.icosa.gallery/v1";
 
 export const searchIcosaAssets = async (c: Context<BaseContext>) => {
 	const query = c.req.query();
-	const q = query.q;
-	if (!q) {
+	if (!query.q) {
 		throw new HTTPException(StatusCodes.BAD_REQUEST, {
 			message: "Search query 'q' is required",
 		});
 	}
 
-	const params = new URLSearchParams({ q });
-	if (query.format) params.set("format", query.format);
-
+	const params = new URLSearchParams(query);
 	const response = await fetch(`${ICOSA_BASE}/assets?${params.toString()}`, {
 		headers: { Accept: "application/json" },
 	});

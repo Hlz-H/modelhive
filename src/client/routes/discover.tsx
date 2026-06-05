@@ -33,11 +33,37 @@ interface IcosaAsset {
 
 interface IcosaResponse {
 	assets: IcosaAsset[];
+	totalSize?: number;
+	nextPageToken?: string;
 }
 
 export const Route = createFileRoute("/discover")({
 	component: DiscoverPage,
 });
+
+const FORMAT_OPTIONS = [
+	{ value: "", label: "All Formats" },
+	{ value: "GLTF2", label: "glTF 2.0" },
+	{ value: "GLB", label: "GLB" },
+	{ value: "OBJ", label: "OBJ" },
+	{ value: "GLTF1", label: "glTF 1.0" },
+];
+const SORT_OPTIONS = [
+	{ value: "BEST", label: "Best Match" },
+	{ value: "NEWEST", label: "Newest" },
+];
+const COMPLEXITY_OPTIONS = [
+	{ value: "", label: "Any Complexity" },
+	{ value: "LOW", label: "Low" },
+	{ value: "MEDIUM", label: "Medium" },
+	{ value: "HIGH", label: "High" },
+];
+const LICENCE_OPTIONS = [
+	{ value: "", label: "Any License" },
+	{ value: "REMIXABLE", label: "Remixable" },
+	{ value: "CREATIVE_COMMONS_BY", label: "CC BY" },
+	{ value: "CREATIVE_COMMONS_BY_NC", label: "CC BY-NC" },
+];
 
 function DiscoverPage() {
 	const navigate = useNavigate();
@@ -47,6 +73,13 @@ function DiscoverPage() {
 	const [assets, setAssets] = useState<IcosaAsset[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState("");
+	const [nextPageToken, setNextPageToken] = useState<string | null>(null);
+	const [totalSize, setTotalSize] = useState(0);
+	const [pageHistory, setPageHistory] = useState<string[]>([]);
+	const [format, setFormat] = useState("");
+	const [sort, setSort] = useState("BEST");
+	const [licence, setLicence] = useState("");
+	const [maxComplexity, setMaxComplexity] = useState("");
 	const [previewAsset, setPreviewAsset] = useState<{
 		id: string;
 		name: string;
@@ -63,15 +96,27 @@ function DiscoverPage() {
 		modelSlug?: string;
 	} | null>(null);
 
-	const fetchAssets = async (q: string) => {
-		if (!q.trim()) return;
+	const buildUrl = (pageToken?: string) => {
+		const params = new URLSearchParams({ q: search });
+		if (format) params.set("format", format);
+		if (sort) params.set("orderBy", sort);
+		if (licence) params.set("licence", licence);
+		if (maxComplexity) params.set("maxComplexity", maxComplexity);
+		if (pageToken) params.set("pageToken", pageToken);
+		return `/api/external/icosa/assets?${params.toString()}`;
+	};
+
+	const fetchAssets = async (pageToken?: string) => {
+		if (!search.trim()) return;
 		setLoading(true);
 		setError("");
 		try {
-			const response = await fetch(`/api/external/icosa/assets?q=${encodeURIComponent(q)}`);
+			const response = await fetch(buildUrl(pageToken));
 			if (response.ok) {
 				const data = (await response.json()) as IcosaResponse;
 				setAssets(data.assets || []);
+				setNextPageToken(data.nextPageToken || null);
+				setTotalSize(data.totalSize || 0);
 			} else {
 				setError("Search failed. Please try again.");
 			}
@@ -80,6 +125,19 @@ function DiscoverPage() {
 		} finally {
 			setLoading(false);
 		}
+	};
+
+	const goToPage = (pageToken?: string) => {
+		if (pageToken) setPageHistory((prev) => [...prev, pageToken]);
+		fetchAssets(pageToken);
+	};
+
+	const goBack = () => {
+		if (pageHistory.length <= 1) return;
+		const prev = pageHistory.slice(0, -1);
+		const prevToken = prev.length > 0 ? prev[prev.length - 1] : undefined;
+		setPageHistory(prev);
+		fetchAssets(prevToken);
 	};
 
 	const openPreview = (e: React.MouseEvent, asset: IcosaAsset) => {
@@ -179,11 +237,15 @@ function DiscoverPage() {
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		setSearch(query);
+		setPageHistory([]);
 	};
 
 	useEffect(() => {
-		if (search) fetchAssets(search);
-	}, [search]);
+		if (search) {
+			setPageHistory([]);
+			fetchAssets();
+		}
+	}, [search, format, sort, licence, maxComplexity]);
 
 	const formatLicense = (license: string) =>
 		license
@@ -207,7 +269,7 @@ function DiscoverPage() {
 						</a>
 					</p>
 
-					<form onSubmit={handleSubmit} className="mb-6 flex gap-3">
+					<form onSubmit={handleSubmit} className="mb-4 flex gap-3">
 						<input
 							type="text"
 							value={query}
@@ -228,6 +290,48 @@ function DiscoverPage() {
 							Search
 						</button>
 					</form>
+
+					{/* Filters */}
+					{search && (
+						<div className="mb-6 flex flex-wrap gap-3">
+							<select
+								value={format}
+								onChange={(e) => setFormat(e.target.value)}
+								className={cn("border border-gray-200 px-3 py-1.5 text-sm", focus)}
+							>
+								{FORMAT_OPTIONS.map((o) => (
+									<option key={o.value} value={o.value}>{o.label}</option>
+								))}
+							</select>
+							<select
+								value={sort}
+								onChange={(e) => setSort(e.target.value)}
+								className={cn("border border-gray-200 px-3 py-1.5 text-sm", focus)}
+							>
+								{SORT_OPTIONS.map((o) => (
+									<option key={o.value} value={o.value}>{o.label}</option>
+								))}
+							</select>
+							<select
+								value={licence}
+								onChange={(e) => setLicence(e.target.value)}
+								className={cn("border border-gray-200 px-3 py-1.5 text-sm", focus)}
+							>
+								{LICENCE_OPTIONS.map((o) => (
+									<option key={o.value} value={o.value}>{o.label}</option>
+								))}
+							</select>
+							<select
+								value={maxComplexity}
+								onChange={(e) => setMaxComplexity(e.target.value)}
+								className={cn("border border-gray-200 px-3 py-1.5 text-sm", focus)}
+							>
+								{COMPLEXITY_OPTIONS.map((o) => (
+									<option key={o.value} value={o.value}>{o.label}</option>
+								))}
+							</select>
+						</div>
+					)}
 				</div>
 
 				{error && (
@@ -250,6 +354,12 @@ function DiscoverPage() {
 						No results found for "{search}"
 					</p>
 				) : (
+					<>
+					{totalSize > 0 && (
+						<p className={cn(text.small, colors.text.secondary, "mb-4")}>
+							{totalSize.toLocaleString()} results
+						</p>
+					)}
 					<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 						{assets.map((asset) => (
 							<div
@@ -358,6 +468,37 @@ function DiscoverPage() {
 							</div>
 						))}
 					</div>
+					{/* Pagination */}
+					{totalSize > 0 && (
+						<div className="mt-8 flex items-center justify-center gap-3">
+							<button
+								type="button"
+								disabled={pageHistory.length === 0}
+								onClick={goBack}
+								className={cn(
+									"border border-gray-200 px-4 py-2 text-sm transition-colors hover:bg-gray-50",
+									pageHistory.length === 0 && "cursor-not-allowed opacity-50",
+								)}
+							>
+								Previous
+							</button>
+							<span className={cn(text.small, colors.text.secondary)}>
+								Page {pageHistory.length + 1}
+							</span>
+							<button
+								type="button"
+								disabled={!nextPageToken}
+								onClick={() => goToPage(nextPageToken!)}
+								className={cn(
+									"border border-gray-200 px-4 py-2 text-sm transition-colors hover:bg-gray-50",
+									!nextPageToken && "cursor-not-allowed opacity-50",
+								)}
+							>
+								Next
+							</button>
+						</div>
+					)}
+					</>
 				)}
 
 				{/* Preview Modal */}

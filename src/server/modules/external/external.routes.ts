@@ -10,7 +10,7 @@ import {
 	proxyManyfoldRequest,
 	proxyManyfoldFile,
 } from "./external.handlers";
-import { icosaImportSchema } from "./external.schema";
+import { icosaImportSchema, icosaSearchSchema } from "./external.schema";
 
 export const createExternalModule = () => {
 	const builder = new APIBuilder({
@@ -23,7 +23,7 @@ export const createExternalModule = () => {
 		.summary("Search Icosa assets")
 		.description("Search for 3D models on Icosa Gallery")
 		.tags("External/Icosa")
-		.query({ q: z.string(), format: z.string().optional() })
+		.query(icosaSearchSchema)
 		.response(StatusCodes.OK, {
 			description: "Search results",
 		});

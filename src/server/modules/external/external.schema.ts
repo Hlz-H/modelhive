@@ -2,7 +2,13 @@ import { z } from "zod/v4";
 
 export const icosaSearchSchema = z.object({
 	q: z.string().min(1),
+	pageSize: z.string().optional(),
+	pageToken: z.string().optional(),
+	orderBy: z.string().optional(),
 	format: z.string().optional(),
+	licence: z.string().optional(),
+	category: z.string().optional(),
+	maxComplexity: z.string().optional(),
 });
 
 export const icosaSearchResponseSchema = z.object({
